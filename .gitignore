@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Configuration (contains secrets)
+config/google.json
+
+# Data files (auto-generated)
+data/users.json
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Database files
+*.db
+dev.db
+prisma/dev.db
+
+# Build outputs
+dist/
+build/
+

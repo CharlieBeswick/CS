@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto Snow</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <!-- App Shell -->
+  <div class="app-shell">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="header-left">
+          <div class="header-title-row">
+            <span class="snowflake">❄</span>
+            <span class="snowflake">❅</span>
+            <h1 class="app-title">CRYPTO SNOW</h1>
+            <span class="bitcoin-symbol">₿</span>
+            <span class="snowflake">❆</span>
+            <span class="snowflake">❄</span>
+          </div>
+          <p class="app-subtitle">Tier Games • Rewards • Free Entry</p>
+        </div>
+        <div class="header-right">
+          <div class="user-pill" id="userPill">
+            <span class="user-status" id="userStatus">Guest</span>
+            <span class="auth-badge" id="authBadge">Signed Out</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="app-main" id="appMain">
+      <!-- Login Screen (shown when not authenticated) -->
+      <div class="screen login-screen" id="loginScreen">
+        <div class="login-content">
+          <h2>Sign in to enter the lobby</h2>
+          <p class="login-description">
+            Crypto Snow is a free-to-play ticket ladder. Earn Bronze by watching ads or playing free mini-games, then climb through Silver, Gold, Emerald and higher tiers in competitive draws. No real money, no gambling.
+          </p>
+          <button type="button" class="big-signin-btn" id="bigSignInBtn">
+            Sign in with Google
+          </button>
+          <div id="googleSignInButton" class="google-signin-container" style="display: none;"></div>
+          <div id="loginError" class="error-message" style="display: none;"></div>
+        </div>
+      </div>
+
+      <!-- Lobby Screen (shown when authenticated) -->
+      <div class="screen lobby-screen" id="lobbyScreen" style="display: none;">
+        <div class="lobby-content">
+          <!-- Your Tickets Strip (arcade-style horizontal) -->
+          <div class="ticket-strip" id="ticketStrip">
+            <!-- Tier ticket stubs will be rendered here by JavaScript -->
+          </div>
+
+          <!-- How Crypto Snow Works -->
+          <div class="how-it-works">
+            <h2>How Crypto Snow Works</h2>
+            <p class="how-it-works-text">
+              Crypto Snow is a free-to-play ticket ladder.<br>
+              Watch rewarded ads or play 3 free daily games to earn <strong>Bronze</strong> tickets.<br>
+              Use Bronze to enter Tier 1 games. Win to upgrade your tickets to higher tiers:
+              Silver, Gold, Emerald, Sapphire, Ruby, Amethyst and Diamond.<br>
+              No real money. No gambling. Just luck and progression.
+            </p>
+            <div class="tier-ladder" id="tierLadder">
+              <!-- Tier ladder will be rendered here by JavaScript -->
+            </div>
+          </div>
+
+          <!-- Get Bronze Tickets Button -->
+          <div class="get-bronze-section">
+            <button type="button" class="get-bronze-btn" id="getBronzeBtn">
+              Get Bronze Tickets Here
+            </button>
+          </div>
+
+          <!-- Tier Game Buttons -->
+          <div class="tier-games-section">
+            <h3>Enter Tier Games</h3>
+            <div class="tier-game-buttons" id="tierGameButtons">
+              <!-- Tier game buttons will be rendered here by JavaScript -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- My Tickets Screen -->
+      <section class="screen tickets-screen" id="ticketsScreen" style="display: none;">
+        <div class="tickets-header">
+          <h2>My Tickets</h2>
+          <p>Track your ticket wallet, recent rewards, and earn more by watching ads or playing mini-games.</p>
+        </div>
+
+        <!-- 8-Tier Ticket Wallet Grid (2 rows × 4 columns) -->
+        <div class="wallet-section">
+          <h3 class="wallet-section-title">Your Ticket Wallet</h3>
+          <div class="wallet-grid" id="walletGrid">
+            <!-- Tier cards will be rendered here by JavaScript -->
+          </div>
+          <div class="wallet-note">
+            Tickets are earned only in app. You can't buy or deposit money.
+          </div>
+        </div>
+
+        <!-- DEPRECATED: Legacy Credits Display (hidden, kept for migration) -->
+        <!-- TODO: Remove after full migration to ticketWallet -->
+        <div class="tickets-balance-card" style="display: none;">
+          <div class="tickets-balance-label">Current tickets</div>
+          <div class="tickets-balance-value" id="ticketsBalanceValue">0</div>
+          <div class="tickets-balance-note">
+            Tickets are earned only in app. You can't buy or deposit money.
+          </div>
+        </div>
+
+        <!-- Daily Free Attempts Panel -->
+        <div class="promotions-panel free-attempts-panel">
+          <h3>Daily Free Attempts</h3>
+          <div class="free-attempts-status" id="freeAttemptsStatus">
+            <div class="free-attempts-count">
+              <span class="free-attempts-label">Remaining attempts today:</span>
+              <span class="free-attempts-value" id="freeAttemptsValue">Loading...</span>
+            </div>
+            <p class="free-attempts-description">
+              Play 3 free mini-games per day. Each game has a 1/20 chance to win 1 Bronze ticket.
+            </p>
+          </div>
+          <button type="button" class="free-attempt-btn" id="freeAttemptBtn">
+            Play Free Game
+          </button>
+          <div class="free-attempts-result" id="freeAttemptsResult" style="display: none;"></div>
+        </div>
+
+        <!-- Rewarded Ad Panel -->
+        <div class="promotions-panel ad-reward-panel">
+          <h3>Watch Ad to Earn Tickets</h3>
+          <div class="tickets-ad-box">
+            <div class="tickets-ad-label">Ad space</div>
+            <div class="tickets-ad-preview">
+              <p>Watch a short ad to earn 1 Bronze ticket.</p>
+              <p>Each confirmed ad view grants you 1 Bronze ticket.</p>
+            </div>
+          </div>
+          <button type="button" class="tickets-ad-btn" id="watchAdBtn">
+            Watch ad
+          </button>
+          <!-- TODO: Replace this with real ad SDK callback once implemented -->
+        </div>
+
+        <!-- Recent Activity List -->
+        <div class="tickets-activity-card">
+          <h3>Recent activity</h3>
+          <div class="tickets-activity-list" id="ticketsActivityList">
+            <div class="tickets-activity-item">No activity yet</div>
+          </div>
+        </div>
+
+        <!-- Legal/Info Text -->
+        <div class="tickets-legal-note">
+          <p>Tickets are earned only inside Crypto Snow. You can't buy or deposit money. All tickets and rewards are virtual and have no real-world value.</p>
+        </div>
+      </section>
+
+      <!-- Prizes Screen -->
+      <section class="screen prizes-screen" id="prizesScreen" style="display: none;">
+        <div class="prizes-header">
+          <h2>Prize's!</h2>
+          <p>Understanding Crypto Snow Economy & Values</p>
+        </div>
+
+        <div class="prizes-intro">
+          <p class="prizes-main-text">
+            <strong>1 Advert = 1 Bronze Ticket</strong>
+          </p>
+        </div>
+
+        <div class="prizes-tiers" id="prizesTiers">
+          <!-- Tier breakdowns will be rendered here by JavaScript -->
+        </div>
+
+        <div class="prizes-note">
+          <p>
+            <strong>Note:</strong> These values are internal calculations for economic balance. 
+            All tickets are virtual and have no real-world monetary value. 
+            You cannot buy, sell, or exchange tickets for real money.
+          </p>
+        </div>
+
+        <!-- Pending Withdrawal Requests -->
+        <div class="pending-withdrawals-section" id="pendingWithdrawalsSection" style="display: none;">
+          <h3>Pending Withdrawal Requests</h3>
+          <div class="pending-withdrawals-list" id="pendingWithdrawalsList">
+            <!-- Withdrawal requests will be rendered here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Redemption Screen -->
+      <section class="screen redemption-screen" id="redemptionScreen" style="display: none;">
+        <div class="redemption-header">
+          <h2>Redeem Ticket</h2>
+          <button type="button" class="redemption-back-btn" id="redemptionBackBtn">← Back</button>
+        </div>
+
+        <div class="redemption-content">
+          <!-- Ticket Wallet Display -->
+          <div class="redemption-wallet-section">
+            <h3>Your Ticket Wallet</h3>
+            <div class="redemption-wallet-grid" id="redemptionWalletGrid">
+              <!-- Wallet tiers will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Ticket Type Being Redeemed -->
+          <div class="redemption-ticket-type">
+            <h3>Redeeming</h3>
+            <div class="redemption-ticket-display" id="redemptionTicketDisplay">
+              <!-- Selected tier will be shown here -->
+            </div>
+          </div>
+
+          <!-- Wallet Address Input -->
+          <div class="redemption-address-section">
+            <h3>Enter Receiving Wallet Address</h3>
+            <div class="redemption-address-inputs">
+              <label class="redemption-address-label">
+                <span>Bitcoin (BTC) Address</span>
+                <input 
+                  type="text" 
+                  id="btcAddressInput" 
+                  class="redemption-address-input"
+                  placeholder="Enter your Bitcoin wallet address"
+                />
+              </label>
+              <label class="redemption-address-label">
+                <span>Solana (SOL) Address</span>
+                <input 
+                  type="text" 
+                  id="solAddressInput" 
+                  class="redemption-address-input"
+                  placeholder="Enter your Solana wallet address"
+                />
+              </label>
+            </div>
+            <p class="redemption-address-note">
+              Enter at least one wallet address to receive your prize. You can provide both if you want to split the payment.
+            </p>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="button" class="redemption-submit-btn" id="redemptionSubmitBtn">
+            Submit Redemption Request
+          </button>
+
+          <!-- Legal Note -->
+          <div class="redemption-legal-note">
+            <p>
+              <strong>Important:</strong> Redemption requests are subject to verification and processing time. 
+              Ensure your wallet addresses are correct. Crypto Snow is not responsible for funds sent to incorrect addresses.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- History Screen -->
+      <section class="screen history-screen" id="historyScreen" style="display: none;">
+        <div class="history-header">
+          <h2>Game History</h2>
+          <p>Browse every resolved Bronze lobby with full transparency.</p>
+        </div>
+        <div class="history-layout">
+          <div class="history-list-panel">
+            <div class="history-list" id="historyList"></div>
+          </div>
+          <div class="history-detail-panel" id="historyDetail">
+            <div class="history-empty-state">
+              <h3>Select a game</h3>
+              <p>Choose a completed lobby to see spin data and player numbers.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bronze Lobby Screen -->
+      <section class="screen bronze-lobby-screen" id="bronzeLobbyScreen" style="display: none;">
+        <div class="bronze-lobby-content">
+          <div class="bronze-lobby-header">
+            <button type="button" class="bronze-back-btn" id="bronzeLobbyBackBtn">← Back to Lobby</button>
+            <div>
+              <h2>Bronze Tier Lobby</h2>
+              <p>Stake 1 Bronze ticket, pick a lucky number, and power the Wheel of Fortune.</p>
+            </div>
+            <div class="bronze-ticket-summary">
+              <span>Bronze tickets</span>
+              <strong id="bronzeTicketBalance">0</strong>
+            </div>
+          </div>
+          <div class="bronze-lobby-grid">
+            <div class="bronze-number-card">
+              <div class="bronze-card-heading">
+                <h4>Lucky Number</h4>
+              </div>
+              <div class="bronze-number-picker">
+                <div class="bronze-number-buttons" id="bronzeNumberButtons"></div>
+                <div class="bronze-picker-helper" id="bronzePickerHelper">Pick a number to join the lobby.</div>
+                <div class="bronze-picker-error" id="bronzeLuckyError" style="display:none;"></div>
+                <button type="button" class="bronze-primary-btn" id="bronzeJoinButton">Enter Bronze Lobby</button>
+              </div>
+            </div>
+            <div class="bronze-info-card">
+              <div class="bronze-info-row">
+                <span class="bronze-status-badge" id="bronzeLobbyStatus">WAITING</span>
+              </div>
+              <div class="bronze-info-grid">
+                <div>
+                  <label>Players</label>
+                  <strong id="bronzeLobbyPlayerCount">0 / 0</strong>
+                </div>
+                <div>
+                  <label>Timer</label>
+                  <strong id="bronzeLobbyTimer">—</strong>
+                </div>
+                <div>
+                  <label>Spin force</label>
+                  <strong id="bronzeLobbySpinForce">—</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bronze-wheel-card">
+              <div class="bronze-wheel-graphic" id="bronzeWheelGraphic">
+                <div class="bronze-wheel-pointer"></div>
+              </div>
+              <div class="bronze-wheel-readout">
+                <div>
+                  <label>Winning number</label>
+                  <strong id="bronzeWinningNumber">??</strong>
+                </div>
+                <div>
+                  <label>Spin force</label>
+                  <strong id="bronzeSpinForceFinal">—</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bronze-scoreboard-card">
+              <div class="bronze-card-heading">
+                <h4>Lobby Players</h4>
+              </div>
+              <div class="bronze-scoreboard" id="bronzeLobbyScoreboard"></div>
+            </div>
+            <div class="bronze-chat-card">
+              <div class="bronze-card-heading">
+                <h4>Lobby Chat</h4>
+              </div>
+              <div class="bronze-chat-messages" id="bronzeChatMessages"></div>
+              <form class="bronze-chat-form" id="bronzeChatForm">
+                <input type="text" id="bronzeChatInput" placeholder="Say hi..." autocomplete="off" />
+                <button type="submit" id="bronzeChatSend">Send</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Profile Screen -->
+      <section class="screen profile-screen" id="profileScreen" style="display: none;">
+        <div class="profile-header">
+          <h2>Profile</h2>
+          <p>Set how other players see you in Crypto Snow.</p>
+        </div>
+
+        <form id="profile-form" class="profile-form">
+          <div class="profile-avatar-row">
+            <img id="profile-avatar-preview" class="profile-avatar" src="" alt="Avatar" />
+            <div class="profile-avatar-text">
+              <div class="profile-email-label">Signed in as</div>
+              <div id="profile-email" class="profile-email-value"></div>
+              <div class="profile-tip">Your Google email is private and not shown to other players.</div>
+            </div>
+          </div>
+
+          <label class="profile-field">
+            <span>Public name</span>
+            <input
+              type="text"
+              id="profile-public-name"
+              maxlength="24"
+              placeholder="e.g. LuckyCharlie"
+              required
+            />
+            <small>This name is visible to everyone in draws, leaderboards and chat.</small>
+          </label>
+
+          <label class="profile-field">
+            <span>Profile image URL</span>
+            <input
+              type="url"
+              id="profile-avatar-url"
+              placeholder="Paste image URL or leave blank to use Google photo"
+            />
+            <small>For now we support image URLs only. We'll add uploads later.</small>
+          </label>
+
+          <div class="profile-wallet">
+            <div class="wallet-label">Ticket wallet</div>
+            <div class="wallet-balance">
+              <span id="wallet-amount">0</span>
+              <span class="wallet-unit">Tickets</span>
+            </div>
+            <div class="wallet-note">Tickets are earned in app. You can't buy or deposit money.</div>
+          </div>
+
+          <button type="submit" class="profile-save-btn">
+            Save profile
+          </button>
+        </form>
+
+        <div class="profile-settings">
+          <h3>Settings</h3>
+          <p>More options coming soon (notifications, privacy, security).</p>
+          <button type="button" class="profile-settings-btn" disabled>
+            Settings (coming soon)
+          </button>
+        </div>
+
+        <div class="profile-signout">
+          <button type="button" class="profile-signout-btn" id="signOutBtn">
+            Sign Out
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <div class="nav-item active" data-screen="lobby-screen">
+        <div class="nav-dot"></div>
+        <span>Lobby</span>
+      </div>
+      <div class="nav-item" data-screen="tickets-screen">
+        <div class="nav-dot"></div>
+        <span>My Tickets</span>
+      </div>
+      <div class="nav-item" data-screen="prizes-screen">
+        <div class="nav-dot"></div>
+        <span>Prize's!</span>
+      </div>
+      <div class="nav-item" data-screen="history-screen">
+        <div class="nav-dot"></div>
+        <span>History</span>
+      </div>
+      <div class="nav-item" data-screen="profile-screen">
+        <div class="nav-dot"></div>
+        <span>Profile</span>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Info Modal -->
+  <div class="modal" id="infoModal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Info & Rules</h3>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>What is Crypto Snow?</h4>
+        <p>
+          Crypto Snow is a free-to-play ticket ladder game. Earn tickets by watching ads or playing daily mini-games, then use them to enter tier-based competitive draws. Climb from Bronze through Silver, Gold, Emerald, Sapphire, Ruby, Amethyst, and Diamond tiers.
+        </p>
+        <h4>How It Works</h4>
+        <ul>
+          <li>Sign in with your Google account (free)</li>
+          <li>Earn Bronze tickets by watching ads or playing daily mini-games</li>
+          <li>Enter tier games using tickets of that tier</li>
+          <li>Win higher-tier tickets by being the winner in competitive draws</li>
+          <li>All draws are transparent with public ticket numbers</li>
+          <li>Winners are publicly announced</li>
+        </ul>
+        <h4>Important Notes</h4>
+        <ul>
+          <li><strong>No deposits:</strong> Users cannot deposit or wager money</li>
+          <li><strong>Free entry:</strong> All entries are completely free</li>
+          <li><strong>No gambling:</strong> This app does not offer real-money gambling</li>
+          <li><strong>Virtual rewards:</strong> All tickets and rewards are virtual and have no real-world value</li>
+        </ul>
+        <p class="legal-note">
+          <small>
+            Crypto Snow does not offer real-money gambling or an opportunity to win real money or prizes. 
+            The system is free-entry with no deposits allowed. All tickets and tier progression are virtual.
+          </small>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer with Info Link -->
+  <footer class="app-footer">
+    <button class="info-link" id="infoLink">Info & Rules</button>
+  </footer>
+
+  <!-- Game Detail Modal -->
+  <div class="modal" id="tombolaModal" style="display: none;">
+    <div class="modal-content tombola-modal-inner">
+      <div class="modal-header tombola-modal-header">
+        <h3 id="modalTombolaName"></h3>
+        <button class="modal-close" id="tombolaModalClose">&times;</button>
+      </div>
+      
+      <div class="tombola-modal-tabs">
+        <button class="modal-tab active" data-tab="overview" id="tabOverview">Overview</button>
+        <button class="modal-tab" data-tab="board" id="tabBoard">Ticket Board</button>
+        <button class="modal-tab" data-tab="game" id="tabGame">Game</button>
+      </div>
+
+      <div class="modal-body tombola-modal-body">
+        <div class="modal-panel modal-panel-overview active" id="modal-panel-overview">
+          <!-- Overview content will be rendered here -->
+        </div>
+
+        <div class="modal-panel modal-panel-board" id="modal-panel-board">
+          <div class="board-summary">
+            <div class="board-your-tickets">
+              <span>Your tickets in this draw:</span>
+              <strong id="board-your-count">0</strong>
+            </div>
+            <div class="board-actions">
+              <button type="button" id="board-enter-btn" class="board-enter-btn">
+                Enter draw (use 1 ticket)
+              </button>
+              <small id="board-enter-hint" class="board-enter-hint">
+                Uses 1 ticket from your balance. Tickets cannot be bought.
+              </small>
+            </div>
+          </div>
+
+          <div class="board-list-wrapper">
+            <div class="board-list-header">
+              <span>Ticket</span>
+              <span>Player</span>
+              <span>Time</span>
+            </div>
+            <div class="board-list" id="board-list">
+              <!-- Ticket rows will be injected here -->
+            </div>
+            <div class="board-empty" id="board-empty" style="display: none;">
+              No entries yet. Be the first to enter!
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-panel modal-panel-game" id="modal-panel-game">
+          <div class="game-countdown">
+            <div class="game-countdown-circle">
+              <svg class="game-countdown-svg" viewBox="0 0 100 100">
+                <circle class="game-countdown-bg" cx="50" cy="50" r="45"></circle>
+                <circle class="game-countdown-progress" cx="50" cy="50" r="45" id="countdown-progress"></circle>
+              </svg>
+              <span id="game-countdown-value">10</span>
+            </div>
+            <div class="game-countdown-label">Next draw starting in…</div>
+          </div>
+
+          <div class="game-scoreboard-wrapper">
+            <div class="game-scoreboard-header">
+              <span>Ticket</span>
+              <span>Player</span>
+            </div>
+            <div class="game-scoreboard" id="game-scoreboard">
+              <!-- entries added by JS -->
+            </div>
+          </div>
+
+          <div class="game-result-banner" id="game-result-banner" style="display:none;">
+            <div id="game-result-text"></div>
+            <small id="game-result-subtext"></small>
+          </div>
+
+          <button type="button" id="game-start-btn" class="game-start-btn">
+            Start draw
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+

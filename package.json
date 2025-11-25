@@ -1,0 +1,26 @@
+{
+  "name": "crypto-tickets",
+  "version": "1.0.0",
+  "description": "Crypto Tickets - Free-to-enter tier-based ticket games",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "crypto-tickets",
+    "tier-games",
+    "tickets"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "google-auth-library": "^9.2.0",
+    "prisma": "^6.19.0"
+  }
+}

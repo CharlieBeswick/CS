@@ -1,0 +1,1190 @@
+/**
+ * Crypto Snow Admin Panel Styles
+ * Clean admin dashboard styles
+ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --admin-bg: #0f1419;
+  --admin-surface: #1a1f2e;
+  --admin-surface-hover: #252b3a;
+  --admin-card-bg: #1a1f2e;
+  --admin-border: rgba(255, 255, 255, 0.1);
+  --admin-text: #e0e0e0;
+  --admin-text-secondary: #888;
+  --admin-text-muted: #888;
+  --admin-accent: #00d4ff;
+  --admin-accent-hover: #00b8e6;
+  --admin-success: #00ff88;
+  --admin-danger: #ff4444;
+  --admin-warning: #ffaa00;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  min-height: 100vh;
+}
+
+.admin-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.admin-header {
+  background: var(--admin-surface);
+  border-bottom: 2px solid var(--admin-border);
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.admin-header-left h1 {
+  font-size: 1.5rem;
+  color: var(--admin-accent);
+  margin-bottom: 0.25rem;
+}
+
+.admin-subtitle {
+  font-size: 0.85rem;
+  color: var(--admin-text-muted);
+}
+
+.admin-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid var(--admin-accent);
+  border-radius: 8px;
+}
+
+.admin-user-info span:first-child {
+  font-size: 0.9rem;
+  color: var(--admin-text);
+}
+
+#admin-user-email {
+  cursor: pointer !important;
+  transition: color 0.2s;
+  user-select: none;
+  display: inline-block;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+#admin-user-email:hover {
+  color: var(--admin-accent) !important;
+  text-decoration: underline;
+  background: rgba(0, 212, 255, 0.1);
+}
+
+.admin-badge {
+  padding: 0.25rem 0.75rem;
+  background: var(--admin-accent);
+  color: #0f1419;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Layout */
+.admin-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.admin-sidebar {
+  width: 250px;
+  background: var(--admin-surface);
+  border-right: 1px solid var(--admin-border);
+  padding: 1.5rem 0;
+  overflow-y: auto;
+}
+
+.admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0 1rem;
+}
+
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: var(--admin-text-muted);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.admin-nav-item:hover {
+  background: var(--admin-surface-hover);
+  color: var(--admin-text);
+}
+
+.admin-nav-item.active {
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--admin-accent);
+  border-left: 3px solid var(--admin-accent);
+}
+
+.admin-nav-icon {
+  font-size: 1.2rem;
+}
+
+.admin-nav-label {
+  font-weight: 500;
+}
+
+/* Main Content */
+.admin-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+}
+
+.admin-page {
+  display: none;
+}
+
+.admin-page.active {
+  display: block;
+}
+
+/* Withdrawals Page Styles */
+.admin-withdrawals-controls {
+  margin-bottom: 20px;
+}
+
+.admin-filter-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-filter-btn {
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--admin-text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--admin-accent);
+}
+
+.admin-filter-btn.active {
+  background: var(--admin-accent);
+  border-color: var(--admin-accent);
+  color: #000;
+}
+
+.admin-withdrawals-stats {
+  margin-bottom: 24px;
+}
+
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.admin-stat-card {
+  background: var(--admin-card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.admin-stat-label {
+  font-size: 0.85rem;
+  color: var(--admin-text-secondary);
+  margin-bottom: 8px;
+}
+
+.admin-stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--admin-text);
+}
+
+.admin-stat-subtitle {
+  font-size: 0.75rem;
+  color: var(--admin-text-muted);
+  margin-top: 0.25rem;
+}
+
+.admin-stat-pending .admin-stat-value {
+  color: #FFAA00;
+}
+
+.admin-stat-paid .admin-stat-value {
+  color: #00FF00;
+}
+
+.admin-stat-rejected .admin-stat-value {
+  color: #FF0000;
+}
+
+.admin-withdrawals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-withdrawal-card {
+  background: var(--admin-card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s ease;
+}
+
+.admin-withdrawal-card:hover {
+  border-color: var(--admin-accent);
+  box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+}
+
+.admin-withdrawal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-withdrawal-user {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-withdrawal-user strong {
+  font-size: 1.1rem;
+  color: var(--admin-text);
+}
+
+.admin-withdrawal-email {
+  font-size: 0.85rem;
+  color: var(--admin-text-secondary);
+}
+
+.admin-withdrawal-status {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.admin-withdrawal-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-withdrawal-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  font-size: 0.9rem;
+}
+
+.admin-detail-label {
+  color: var(--admin-text-secondary);
+  font-weight: 600;
+  min-width: 120px;
+}
+
+.admin-detail-value {
+  color: var(--admin-text);
+  text-align: right;
+  flex: 1;
+  word-break: break-all;
+}
+
+.admin-address-value {
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+}
+
+.admin-withdrawal-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-btn-success {
+  background: #00FF00;
+  color: #000;
+}
+
+.admin-btn-success:hover {
+  background: #00CC00;
+}
+
+.admin-btn-danger {
+  background: #FF0000;
+  color: #FFF;
+}
+
+.admin-btn-danger:hover {
+  background: #CC0000;
+}
+
+.admin-btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--admin-text);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.admin-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.admin-btn-primary {
+  background: var(--admin-accent);
+  color: #000;
+  border: 1px solid var(--admin-accent);
+}
+
+.admin-btn-primary:hover {
+  background: var(--admin-accent-hover);
+  border-color: var(--admin-accent-hover);
+}
+
+.admin-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-input,
+.admin-select {
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.admin-input:focus,
+.admin-select:focus {
+  outline: none;
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+}
+
+.admin-empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--admin-text-secondary);
+  font-size: 1rem;
+}
+
+.admin-page-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--admin-text);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--admin-border);
+}
+
+.admin-page-content {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  padding: 2rem;
+  min-height: 400px;
+}
+
+.admin-placeholder {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--admin-text-muted);
+}
+
+.admin-placeholder p {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.admin-lobbies-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-lobbies-controls label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--admin-text-muted);
+  gap: 0.35rem;
+}
+
+.admin-lobbies-controls select {
+  min-width: 150px;
+  padding: 0.45rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--admin-text);
+}
+
+.admin-lobbies-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 1.25rem;
+}
+
+.admin-lobby-list {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.admin-lobby-row {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.admin-lobby-row:hover {
+  background: rgba(0, 255, 255, 0.08);
+}
+
+.admin-lobby-row.active {
+  background: rgba(0, 255, 255, 0.12);
+  border-left: 3px solid var(--admin-accent);
+}
+
+.admin-lobby-row h4 {
+  font-size: 0.95rem;
+  margin-bottom: 0.15rem;
+}
+
+.admin-lobby-meta {
+  font-size: 0.75rem;
+  color: var(--admin-text-muted);
+}
+
+.admin-lobby-status {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-transform: uppercase;
+}
+
+.admin-lobby-status.waiting { color: #ffd700; border-color: rgba(255, 215, 0, 0.4); }
+.admin-lobby-status.countdown { color: #00ffff; border-color: rgba(0, 255, 255, 0.4); }
+.admin-lobby-status.spinning { color: #7df9ff; border-color: rgba(125, 249, 255, 0.4); }
+.admin-lobby-status.resolved { color: #7cfc00; border-color: rgba(124, 252, 0, 0.4); }
+.admin-lobby-status.cancelled { color: #ff6b6b; border-color: rgba(255, 107, 107, 0.4); }
+
+.admin-lobby-detail {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1rem;
+  background: rgba(10, 10, 15, 0.6);
+  min-height: 520px;
+  overflow-y: auto;
+}
+
+.admin-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.admin-detail-card {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.admin-detail-card label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--admin-text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.admin-detail-card strong {
+  font-size: 1rem;
+}
+
+.admin-lobby-lucky-numbers {
+  background: var(--admin-surface);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid var(--admin-border);
+}
+
+.admin-lobby-lucky-numbers strong {
+  color: var(--admin-accent);
+}
+
+.admin-lobby-lucky-numbers small {
+  color: var(--admin-text-muted);
+  font-size: 0.85rem;
+}
+
+.admin-lobby-player-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.admin-lobby-player-table th,
+.admin-lobby-player-table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+}
+
+.admin-lobby-player-table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--admin-text-muted);
+}
+
+.admin-lobby-player-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.admin-winner-row {
+  background: rgba(0, 255, 136, 0.1) !important;
+  border-left: 3px solid var(--admin-success);
+}
+
+.admin-winner-row td {
+  font-weight: 600;
+}
+
+/* No Admin Access */
+.admin-no-access {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--admin-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.admin-no-access-content {
+  text-align: center;
+  padding: 3rem;
+  background: var(--admin-surface);
+  border: 2px solid var(--admin-danger);
+  border-radius: 12px;
+  max-width: 500px;
+}
+
+.admin-no-access-content h2 {
+  color: var(--admin-danger);
+  margin-bottom: 1rem;
+}
+
+.admin-no-access-content p {
+  color: var(--admin-text);
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.admin-no-access-content a {
+  color: var(--admin-accent);
+  text-decoration: none;
+}
+
+.admin-no-access-content a:hover {
+  text-decoration: underline;
+}
+
+/* Modal */
+.admin-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.admin-modal-content {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.admin-modal-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--admin-text);
+  margin-bottom: 1rem;
+}
+
+.admin-modal-content p {
+  color: var(--admin-text-muted);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.admin-modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+/* Game History */
+.admin-game-history-controls {
+  margin-bottom: 1rem;
+}
+
+.admin-game-history-controls label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--admin-text-muted);
+  gap: 0.35rem;
+}
+
+.admin-game-history-controls input {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--admin-text);
+  font-size: 0.95rem;
+  min-width: 250px;
+  transition: all 0.2s ease;
+}
+
+.admin-game-history-controls input:focus {
+  outline: none;
+  border-color: var(--admin-accent);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.1);
+}
+
+.admin-game-history-controls input::placeholder {
+  color: var(--admin-text-muted);
+}
+
+.admin-game-history-layout {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1.5rem;
+  height: calc(100vh - 250px);
+}
+
+.admin-game-history-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-game-history-card {
+  background: var(--admin-card-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-game-history-card:hover {
+  background: var(--admin-surface-hover);
+  border-color: var(--admin-accent);
+}
+
+.admin-game-history-card.active {
+  background: var(--admin-surface-hover);
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+}
+
+.admin-game-history-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.admin-game-history-card-header strong {
+  font-size: 1rem;
+  color: var(--admin-text);
+}
+
+.admin-game-history-card-meta {
+  font-size: 0.85rem;
+  color: var(--admin-text-secondary);
+  line-height: 1.5;
+}
+
+.admin-game-history-detail {
+  background: var(--admin-card-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.admin-game-history-detail-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-game-history-detail-header h3 {
+  font-size: 1.5rem;
+  color: var(--admin-text);
+  margin-bottom: 0.5rem;
+}
+
+.admin-game-history-detail-header p {
+  font-size: 0.9rem;
+  color: var(--admin-text-secondary);
+}
+
+.admin-game-history-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-info-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+
+.admin-info-card label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--admin-text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.admin-info-card strong {
+  display: block;
+  font-size: 1rem;
+  color: var(--admin-text);
+  font-weight: 600;
+}
+
+.admin-game-history-players {
+  margin-top: 1.5rem;
+}
+
+.admin-game-history-players h4 {
+  font-size: 1.1rem;
+  color: var(--admin-text);
+  margin-bottom: 1rem;
+}
+
+.admin-game-history-players-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-game-history-player-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+}
+
+.admin-game-history-player-row.winner {
+  background: rgba(0, 255, 136, 0.1);
+  border-color: var(--admin-success);
+}
+
+.admin-game-history-player-info {
+  flex: 1;
+}
+
+.admin-game-history-player-name {
+  font-weight: 600;
+  color: var(--admin-text);
+  margin-bottom: 0.25rem;
+}
+
+.admin-game-history-player-email {
+  font-size: 0.85rem;
+  color: var(--admin-text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.admin-game-history-player-time {
+  font-size: 0.75rem;
+  color: var(--admin-text-muted);
+}
+
+.admin-game-history-player-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--admin-accent);
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.admin-winner-badge {
+  font-size: 0.7rem;
+  background: var(--admin-success);
+  color: var(--admin-bg);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.admin-badge-bronze {
+  background: #cd7f32;
+  color: white;
+}
+
+.admin-badge-silver {
+  background: #c0c0c0;
+  color: #1a1a1a;
+}
+
+.admin-badge-gold {
+  background: #ffd700;
+  color: #1a1a1a;
+}
+
+/* Users Page */
+.admin-users-controls {
+  margin-bottom: 1.5rem;
+}
+
+.admin-users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-user-card {
+  background: var(--admin-card-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.admin-user-card:hover {
+  border-color: var(--admin-accent);
+}
+
+.admin-user-header {
+  padding: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.admin-user-header:hover {
+  background: var(--admin-surface-hover);
+}
+
+.admin-user-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.admin-user-number {
+  background: var(--admin-accent);
+  color: #000;
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  min-width: 3rem;
+  text-align: center;
+}
+
+.admin-user-info {
+  flex: 1;
+}
+
+.admin-user-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--admin-text);
+  margin-bottom: 0.25rem;
+}
+
+.admin-user-email {
+  font-size: 0.9rem;
+  color: var(--admin-text-secondary);
+}
+
+.admin-user-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-user-stats-inline {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--admin-text-secondary);
+}
+
+.admin-expand-icon {
+  font-size: 0.9rem;
+  color: var(--admin-text-secondary);
+  transition: transform 0.2s;
+}
+
+.admin-user-detail {
+  border-top: 1px solid var(--admin-border);
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.admin-user-detail-loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--admin-text-secondary);
+}
+
+.admin-user-detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.admin-user-detail-section {
+  border-bottom: 1px solid var(--admin-border);
+  padding-bottom: 1.5rem;
+}
+
+.admin-user-detail-section:last-child {
+  border-bottom: none;
+}
+
+.admin-user-detail-section h3 {
+  font-size: 1.2rem;
+  color: var(--admin-accent);
+  margin-bottom: 1rem;
+}
+
+.admin-user-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.admin-user-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.admin-user-detail-item label {
+  font-size: 0.85rem;
+  color: var(--admin-text-secondary);
+  font-weight: 500;
+}
+
+.admin-user-detail-item span {
+  font-size: 0.95rem;
+  color: var(--admin-text);
+  word-break: break-word;
+}
+
+.admin-user-detail-item a {
+  color: var(--admin-accent);
+  text-decoration: none;
+}
+
+.admin-user-detail-item a:hover {
+  text-decoration: underline;
+}
+
+.admin-user-game-history {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.admin-table thead {
+  background: var(--admin-surface);
+}
+
+.admin-table th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--admin-text);
+  border-bottom: 2px solid var(--admin-border);
+}
+
+.admin-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--admin-border);
+  color: var(--admin-text-secondary);
+}
+
+.admin-table tbody tr:hover {
+  background: var(--admin-surface-hover);
+}
+
+.admin-badge-success {
+  background: var(--admin-success);
+  color: #000;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.admin-user-ip-history {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.admin-user-ip-history code {
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--admin-accent);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+  
+  .admin-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--admin-border);
+  }
+  
+  .admin-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 0.5rem;
+  }
+  
+  .admin-nav-item {
+    white-space: nowrap;
+  }
+  
+  .admin-game-history-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .admin-game-history-detail {
+    margin-top: 1rem;
+  }
+
+  .admin-game-history-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-content {
+    padding: 1rem;
+  }
+}

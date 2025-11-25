@@ -1,0 +1,332 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(cuid())
+  googleSub       String   @unique
+  email           String   @unique
+  name            String?
+  picture         String?
+  publicName      String?
+  avatarUrl       String?
+  credits         Int      @default(0) // TODO: Deprecated - migrate to ticketWallet
+  ticketWallet    Json?    // { "BRONZE": 0, "SILVER": 0, ... } - 8-tier ticket wallet
+  role            Role     @default(PLAYER)
+
+  tickets         Ticket[]
+  drawsWon        Draw[]   @relation("WinnerDraws")
+  creditEvents    CreditTransaction[]
+  freeAttempts    FreeAttempt[]
+  withdrawalRequests WithdrawalRequest[]
+  lobbyPlayers    LobbyPlayer[]
+  lobbyChatMessages LobbyChatMessage[]
+  userSessions    UserSession[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Tombola {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  prize          String
+  description    String?
+  status         TombolaStatus @default(DRAFT)
+  houseCutRatio  Float    @default(0.2)
+  startTime      DateTime?
+  endTime        DateTime?
+
+  tickets        Ticket[]
+  draws          Draw[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Ticket {
+  id          String   @id @default(cuid())
+  number      Int      // sequential per tombola (for board/spin)
+  tombola     Tombola  @relation(fields: [tombolaId], references: [id], onDelete: Cascade)
+  tombolaId   String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  createdAt   DateTime @default(now())
+
+  draw        Draw?    @relation
+
+  @@index([tombolaId])
+  @@index([userId])
+  @@index([tombolaId, number])
+}
+
+model Draw {
+  id             String   @id @default(cuid())
+  tombola        Tombola  @relation(fields: [tombolaId], references: [id], onDelete: Cascade)
+  tombolaId      String
+  startedAt      DateTime @default(now())
+  finishedAt     DateTime?
+  status         DrawStatus @default(PENDING)
+
+  potSize        Int?      // total tickets at draw time
+  houseCutRatio  Float?
+  winnerTicket   Ticket?   @relation(fields: [winnerTicketId], references: [id])
+  winnerTicketId String?   @unique
+  winnerUser     User?     @relation("WinnerDraws", fields: [winnerUserId], references: [id])
+  winnerUserId   String?
+  winnerPayout   Int?
+  housePayout    Int?
+
+  @@index([tombolaId])
+}
+
+model CreditTransaction {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  amount      Int      // positive or negative
+  reason      String   // e.g. "ENTER_TOMBOLA", "DRAW_WIN", "AD_REWARD"
+  tier        String?  // Ticket tier (BRONZE, SILVER, etc.) for new wallet system
+  meta        Json?
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model FreeAttempt {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  didWin      Boolean  @default(false)
+  awardedTier String?  // If won, which tier was awarded (usually BRONZE)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
+model WithdrawalRequest {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  tier        String   // Ticket tier being redeemed (EMERALD, SAPPHIRE, etc.)
+  amount      Int      @default(1) // Number of tickets (usually 1)
+  btcAddress  String?
+  solAddress  String?
+  status      WithdrawalStatus @default(PENDING)
+  adminNotes  String?  // Admin can add notes
+  processedAt DateTime?
+  processedBy String?  // Admin user ID who processed it
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model TierLobby {
+  id                String      @id @default(cuid())
+  tier              LobbyTier
+  status            LobbyStatus @default(WAITING)
+  minPlayers        Int         @default(3)
+  maxPlayers        Int         @default(10)
+  baseSpinForce     Int         @default(20)
+  countdownSeconds  Int         @default(8)
+  countdownStartsAt DateTime?
+  gameStartsAt      DateTime?
+  resolvedAt        DateTime?
+  cancelledAt       DateTime?
+  cancellationReason String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  players           LobbyPlayer[]
+  round             LobbyRound?
+  chatMessages      LobbyChatMessage[]
+
+  @@index([tier])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model LobbyPlayer {
+  id                   String     @id @default(cuid())
+  lobby                TierLobby  @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  lobbyId              String
+  user                 User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId               String
+  luckyNumber          Int
+  luckyNumberRevealed  Boolean    @default(false)
+  lastLuckyNumberChange DateTime?
+  joinedAt             DateTime   @default(now())
+  leftAt               DateTime?
+  ticketTierUsed       LobbyTier
+  ticketTransactionId  String?
+  refundedTransactionId String?
+  isActive             Boolean    @default(true)
+
+  winningRounds        LobbyRound[] @relation("LobbyRoundWinningPlayer")
+
+  @@unique([lobbyId, userId])
+  @@index([userId])
+}
+
+model LobbyRound {
+  id               String     @id @default(cuid())
+  lobby            TierLobby  @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  lobbyId          String     @unique
+  spinForceBase    Int
+  spinForceTotal   Int
+  spinForceFinal   Int
+  seed             String?
+  wheelSegments    Json?
+  winningSegment   Int?
+  winningNumber    Int?
+  spinStartedAt    DateTime?
+  spinCompletedAt  DateTime?
+  resolvedAt       DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  winningPlayer    LobbyPlayer? @relation("LobbyRoundWinningPlayer", fields: [winningPlayerId], references: [id])
+  winningPlayerId  String?
+
+  @@index([lobbyId])
+  @@index([createdAt])
+}
+
+model LobbyChatMessage {
+  id        String    @id @default(cuid())
+  lobby     TierLobby @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  lobbyId   String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  message   String
+  createdAt DateTime  @default(now())
+
+  @@index([lobbyId, createdAt])
+  @@index([userId])
+}
+
+model GameHistory {
+  id                 String       @id @default(cuid())
+  gameNumber         BigInt       @unique
+  lobbyId            String?
+  tier               LobbyTier
+  status             LobbyStatus
+  playerCount        Int
+  minPlayers         Int
+  maxPlayers         Int
+  spinForceBase      Int
+  spinForceTotal     Int
+  spinForceFinal     Int
+  winningNumber      Int?
+  winningSegment     Int?
+  seed               String?
+  wheelSegments      Json?
+  countdownStartedAt DateTime?
+  gameStartedAt      DateTime?
+  resolvedAt         DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  players            GameHistoryPlayer[]
+
+  @@index([gameNumber])
+  @@index([resolvedAt])
+}
+
+model GameHistoryPlayer {
+  id             String      @id @default(cuid())
+  gameHistory    GameHistory @relation(fields: [gameHistoryId], references: [id], onDelete: Cascade)
+  gameHistoryId  String
+  userId         String?
+  displayName    String?
+  email          String?
+  luckyNumber    Int?
+  ticketTierUsed LobbyTier?
+  joinedAt       DateTime?
+  isWinner       Boolean     @default(false)
+}
+
+model UserSession {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  ipAddress String
+  userAgent String?
+  createdAt DateTime @default(now())
+  lastSeenAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([ipAddress])
+  @@index([createdAt])
+}
+
+model GameHistoryArchive {
+  id         String @id @default(cuid())
+  rangeStart BigInt?
+  rangeEnd   BigInt?
+  gameCount  Int
+  payload    Json
+  archivedAt DateTime @default(now())
+}
+
+enum Role {
+  PLAYER
+  ADMIN
+}
+
+enum WithdrawalStatus {
+  PENDING
+  PROCESSING
+  PAID
+  REJECTED
+  CANCELLED
+}
+
+enum TombolaStatus {
+  DRAFT
+  LIVE
+  PENDING
+  FINISHED
+}
+
+enum DrawStatus {
+  PENDING
+  RUNNING
+  FINISHED
+  CANCELLED
+}
+
+enum LobbyTier {
+  BRONZE
+  SILVER
+  GOLD
+  EMERALD
+  SAPPHIRE
+  RUBY
+  AMETHYST
+  DIAMOND
+}
+
+enum LobbyStatus {
+  WAITING
+  COUNTDOWN
+  SPINNING
+  RESOLVED
+  CANCELLED
+}

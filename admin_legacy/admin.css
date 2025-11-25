@@ -1,0 +1,259 @@
+/**
+ * Crypto Tickets Admin Panel Styles
+ * Clean admin dashboard styles
+ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --admin-bg: #0f1419;
+  --admin-surface: #1a1f2e;
+  --admin-surface-hover: #252b3a;
+  --admin-border: rgba(255, 255, 255, 0.1);
+  --admin-text: #e0e0e0;
+  --admin-text-muted: #888;
+  --admin-accent: #00d4ff;
+  --admin-accent-hover: #00b8e6;
+  --admin-success: #00ff88;
+  --admin-danger: #ff4444;
+  --admin-warning: #ffaa00;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  min-height: 100vh;
+}
+
+.admin-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.admin-header {
+  background: var(--admin-surface);
+  border-bottom: 2px solid var(--admin-border);
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.admin-header-left h1 {
+  font-size: 1.5rem;
+  color: var(--admin-accent);
+  margin-bottom: 0.25rem;
+}
+
+.admin-subtitle {
+  font-size: 0.85rem;
+  color: var(--admin-text-muted);
+}
+
+.admin-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid var(--admin-accent);
+  border-radius: 8px;
+}
+
+.admin-user-info span:first-child {
+  font-size: 0.9rem;
+  color: var(--admin-text);
+}
+
+.admin-badge {
+  padding: 0.25rem 0.75rem;
+  background: var(--admin-accent);
+  color: #0f1419;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Layout */
+.admin-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.admin-sidebar {
+  width: 250px;
+  background: var(--admin-surface);
+  border-right: 1px solid var(--admin-border);
+  padding: 1.5rem 0;
+  overflow-y: auto;
+}
+
+.admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0 1rem;
+}
+
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: var(--admin-text-muted);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.admin-nav-item:hover {
+  background: var(--admin-surface-hover);
+  color: var(--admin-text);
+}
+
+.admin-nav-item.active {
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--admin-accent);
+  border-left: 3px solid var(--admin-accent);
+}
+
+.admin-nav-icon {
+  font-size: 1.2rem;
+}
+
+.admin-nav-label {
+  font-weight: 500;
+}
+
+/* Main Content */
+.admin-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+}
+
+.admin-page {
+  display: none;
+}
+
+.admin-page.active {
+  display: block;
+}
+
+.admin-page-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--admin-text);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--admin-border);
+}
+
+.admin-page-content {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  padding: 2rem;
+  min-height: 400px;
+}
+
+.admin-placeholder {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--admin-text-muted);
+}
+
+.admin-placeholder p {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* No Admin Access */
+.admin-no-access {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--admin-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.admin-no-access-content {
+  text-align: center;
+  padding: 3rem;
+  background: var(--admin-surface);
+  border: 2px solid var(--admin-danger);
+  border-radius: 12px;
+  max-width: 500px;
+}
+
+.admin-no-access-content h2 {
+  color: var(--admin-danger);
+  margin-bottom: 1rem;
+}
+
+.admin-no-access-content p {
+  color: var(--admin-text);
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.admin-no-access-content a {
+  color: var(--admin-accent);
+  text-decoration: none;
+}
+
+.admin-no-access-content a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+  
+  .admin-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--admin-border);
+  }
+  
+  .admin-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 0.5rem;
+  }
+  
+  .admin-nav-item {
+    white-space: nowrap;
+  }
+  
+  .admin-content {
+    padding: 1rem;
+  }
+}

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto Tickets Admin</title>
+  <link rel="stylesheet" href="/admin-assets/admin.css">
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Top Bar -->
+    <header class="admin-header">
+      <div class="admin-header-left">
+        <h1>Crypto Tickets Admin</h1>
+        <p class="admin-subtitle">Administrative dashboard for Crypto Tickets platform</p>
+      </div>
+      <div class="admin-header-right">
+        <div class="admin-user-info">
+          <span id="admin-user-email">Loading...</span>
+          <span class="admin-badge">Admin</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Sidebar Navigation -->
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <nav class="admin-nav">
+          <a href="#" class="admin-nav-item active" data-page="dashboard">
+            <span class="admin-nav-icon">📊</span>
+            <span class="admin-nav-label">Dashboard</span>
+          </a>
+          <a href="#" class="admin-nav-item" data-page="users">
+            <span class="admin-nav-icon">👥</span>
+            <span class="admin-nav-label">Users</span>
+          </a>
+          <a href="#" class="admin-nav-item" data-page="game-history">
+            <span class="admin-nav-icon">📜</span>
+            <span class="admin-nav-label">Game History</span>
+          </a>
+          <a href="#" class="admin-nav-item" data-page="current-lobbies">
+            <span class="admin-nav-icon">🎮</span>
+            <span class="admin-nav-label">Current Lobbies</span>
+          </a>
+          <a href="#" class="admin-nav-item" data-page="tier-pyramid">
+            <span class="admin-nav-icon">🔺</span>
+            <span class="admin-nav-label">Tier Pyramid</span>
+          </a>
+        </nav>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="admin-content">
+        <!-- Dashboard Page -->
+        <div id="page-dashboard" class="admin-page active">
+          <h2 class="admin-page-title">Dashboard</h2>
+          <div class="admin-page-content">
+            <div class="admin-placeholder">
+              <p>This will be replaced with real data once implemented.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Users Page -->
+        <div id="page-users" class="admin-page">
+          <h2 class="admin-page-title">Users</h2>
+          <div class="admin-page-content">
+            <div class="admin-placeholder">
+              <p>This will be replaced with real data once implemented.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Game History Page -->
+        <div id="page-game-history" class="admin-page">
+          <h2 class="admin-page-title">Game History</h2>
+          <div class="admin-page-content">
+            <div class="admin-placeholder">
+              <p>This will be replaced with real data once implemented.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Lobbies Page -->
+        <div id="page-current-lobbies" class="admin-page">
+          <h2 class="admin-page-title">Current Lobbies</h2>
+          <div class="admin-page-content">
+            <div class="admin-placeholder">
+              <p>This will be replaced with real data once implemented.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tier Pyramid Page -->
+        <div id="page-tier-pyramid" class="admin-page">
+          <h2 class="admin-page-title">Tier Pyramid</h2>
+          <div class="admin-page-content">
+            <div class="admin-placeholder">
+              <p>This will be replaced with real data once implemented.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- No Admin Access Message -->
+  <div id="no-admin-access" class="admin-no-access" style="display: none;">
+    <div class="admin-no-access-content">
+      <h2>Access Denied</h2>
+      <p id="no-admin-message">You are signed in, but do not have admin rights for Crypto Tickets.</p>
+      <p><a href="/">Return to Player App</a></p>
+    </div>
+  </div>
+
+  <script src="/admin-assets/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "midnight-spinner": [
+    {
+      "ticketId": "MS-000001",
+      "tombolaId": "midnight-spinner",
+      "userId": "109232833632641724246",
+      "publicName": "Charlie Beswick",
+      "createdAt": "2025-11-23T12:51:11.714Z"
+    },
+    {
+      "ticketId": "MS-000002",
+      "tombolaId": "midnight-spinner",
+      "userId": "109232833632641724246",
+      "publicName": "Charlie Beswick",
+      "createdAt": "2025-11-23T12:51:15.090Z"
+    },
+    {
+      "ticketId": "MS-000003",
+      "tombolaId": "midnight-spinner",
+      "userId": "109232833632641724246",
+      "publicName": "Charlie Beswick",
+      "createdAt": "2025-11-23T12:51:20.571Z"
+    }
+  ],
+  "lucky-7-roll": [],
+  "daily-free-draw": [],
+  "weekend-winner": []

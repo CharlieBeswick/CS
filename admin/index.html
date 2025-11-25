@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto Snow Admin</title>
+  <link rel="stylesheet" href="/admin-assets/admin.css">
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Top Bar -->
+    <header class="admin-header">
+      <div class="admin-header-left">
+        <h1>Crypto Snow Admin</h1>
+        <p class="admin-subtitle">Administrative dashboard for Crypto Snow platform</p>
+      </div>
+      <div class="admin-header-right">
+        <div class="admin-user-info">
+          <span id="admin-user-email" class="admin-user-email-clickable" title="Click to sign out">Loading...</span>
+          <span class="admin-badge">Admin</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Sidebar Navigation -->
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <nav class="admin-nav">
+          <a href="#" class="admin-nav-item active" data-page="dashboard">
+            <span class="admin-nav-icon">📊</span>
+            <span class="admin-nav-label">Dashboard</span>
+          </a>
+          <a href="#" class="admin-nav-item" data-page="withdrawals">
+            <span class="admin-nav-icon">💰</span>
+            <span class="admin-nav-label">Withdrawals</span>
+          </a>
+          <a href="#" class="admin-nav-item" data-page="users">
+            <span class="admin-nav-icon">👥</span>
+            <span class="admin-nav-label">Users</span>
+          </a>
+          <a href="#" class="admin-nav-item" data-page="game-history">
+            <span class="admin-nav-icon">📜</span>
+            <span class="admin-nav-label">Game History</span>
+          </a>
+          <a href="#" class="admin-nav-item" data-page="current-lobbies">
+            <span class="admin-nav-icon">🎮</span>
+            <span class="admin-nav-label">Current Lobbies</span>
+          </a>
+          <a href="#" class="admin-nav-item" data-page="tier-pyramid">
+            <span class="admin-nav-icon">🔺</span>
+            <span class="admin-nav-label">Tier Pyramid</span>
+          </a>
+        </nav>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="admin-content">
+        <!-- Dashboard Page -->
+        <div id="page-dashboard" class="admin-page active">
+          <h2 class="admin-page-title">Dashboard</h2>
+          <div class="admin-page-content">
+            <div class="admin-dashboard-stats" id="adminDashboardStats">
+              <div class="admin-loading">Loading dashboard statistics...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Withdrawals Page -->
+        <div id="page-withdrawals" class="admin-page">
+          <h2 class="admin-page-title">Withdrawal Requests</h2>
+          <div class="admin-page-content">
+            <div class="admin-withdrawals-controls">
+              <div class="admin-filter-buttons">
+                <button class="admin-filter-btn active" data-filter="all">All</button>
+                <button class="admin-filter-btn" data-filter="PENDING">Pending</button>
+                <button class="admin-filter-btn" data-filter="PROCESSING">Processing</button>
+                <button class="admin-filter-btn" data-filter="PAID">Paid</button>
+                <button class="admin-filter-btn" data-filter="REJECTED">Rejected</button>
+              </div>
+            </div>
+            <div class="admin-withdrawals-stats" id="withdrawalsStats">
+              <!-- Stats will be loaded here -->
+            </div>
+            <div class="admin-withdrawals-list" id="withdrawalsList">
+              <!-- Withdrawal requests will be loaded here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Users Page -->
+        <div id="page-users" class="admin-page">
+          <h2 class="admin-page-title">Users</h2>
+          <div class="admin-page-content">
+            <div class="admin-users-controls">
+              <input 
+                type="text" 
+                id="admin-users-search" 
+                class="admin-search-input" 
+                placeholder="Search by name or email..."
+              />
+            </div>
+            <div class="admin-users-list" id="adminUsersList">
+              <div class="admin-loading">Loading users...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Game History Page -->
+        <div id="page-game-history" class="admin-page">
+          <h2 class="admin-page-title">Game History</h2>
+          <div class="admin-page-content">
+            <div class="admin-game-history-controls">
+              <label>
+                Search by Game Number
+                <input type="text" id="adminGameHistorySearch" placeholder="e.g. 000000001 or 1" autocomplete="off" />
+              </label>
+            </div>
+            <div class="admin-game-history-layout">
+              <div class="admin-game-history-list" id="adminGameHistoryList">
+                <p>Loading game history...</p>
+              </div>
+              <div class="admin-game-history-detail" id="adminGameHistoryDetail">
+                <p>Select a game from the list to view full details.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Lobbies Page -->
+        <div id="page-current-lobbies" class="admin-page">
+          <h2 class="admin-page-title">Current Lobbies</h2>
+          <div class="admin-page-content">
+            <div class="admin-lobbies-controls">
+              <label>
+                Tier
+                <select id="adminLobbyTierFilter">
+                  <option value="">All tiers</option>
+                  <option value="BRONZE" selected>Bronze</option>
+                  <option value="SILVER">Silver</option>
+                  <option value="GOLD">Gold</option>
+                  <option value="EMERALD">Emerald</option>
+                  <option value="SAPPHIRE">Sapphire</option>
+                  <option value="RUBY">Ruby</option>
+                  <option value="AMETHYST">Amethyst</option>
+                  <option value="DIAMOND">Diamond</option>
+                </select>
+              </label>
+              <label>
+                Status
+                <select id="adminLobbyStatusFilter">
+                  <option value="">All statuses</option>
+                  <option value="WAITING" selected>Waiting</option>
+                  <option value="COUNTDOWN">Countdown</option>
+                  <option value="SPINNING">Spinning</option>
+                  <option value="RESOLVED">Resolved</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
+                <small style="color: var(--admin-text-muted); font-size: 0.7rem; margin-top: 0.25rem;">Note: "Current Lobbies" shows active games only</small>
+              </label>
+              <label>
+                Created within
+                <select id="adminLobbyDaysFilter">
+                  <option value="1" selected>24 hours</option>
+                  <option value="7">7 days</option>
+                  <option value="30">30 days</option>
+                </select>
+              </label>
+            </div>
+            <div class="admin-lobbies-layout">
+              <div class="admin-lobby-list" id="adminLobbyList">
+                <!-- Lobby rows injected here -->
+              </div>
+              <div class="admin-lobby-detail" id="adminLobbyDetail">
+                <p>Select a lobby from the list to inspect players, numbers, and round data.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tier Pyramid Page -->
+        <div id="page-tier-pyramid" class="admin-page">
+          <h2 class="admin-page-title">Tier Pyramid</h2>
+          <div class="admin-page-content">
+            <div class="admin-placeholder">
+              <p>This will be replaced with real data once implemented.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Sign Out Confirmation Modal -->
+  <div id="signout-modal" class="admin-modal" style="display: none;">
+    <div class="admin-modal-content">
+      <h3>Sign Out</h3>
+      <p>Are you sure you want to sign out?</p>
+      <div class="admin-modal-actions">
+        <button type="button" class="admin-btn admin-btn-primary" id="signout-confirm">Confirm</button>
+        <button type="button" class="admin-btn admin-btn-secondary" id="signout-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Admin Access Message -->
+  <div id="no-admin-access" class="admin-no-access" style="display: none;">
+    <div class="admin-no-access-content">
+      <h2>Access Denied</h2>
+      <p id="no-admin-message">You are signed in, but do not have admin rights for Crypto Snow.</p>
+      <p><a href="/">Return to Player App</a></p>
+    </div>
+  </div>
+
+  <script src="/admin-assets/admin.js"></script>
+</body>
+</html>
