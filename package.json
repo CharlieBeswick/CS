@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "build": "echo 'No build step required - static files in public/'"
+    "build": "echo 'No build step required - static files in public/'",
+    "postinstall": "npx prisma generate",
+    "migrate": "npx prisma migrate deploy"
   },
   "keywords": [
     "crypto-tickets",
