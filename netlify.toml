@@ -1,0 +1,18 @@
+[build]
+  publish = "public"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Redirects for SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Note: This configuration deploys only the static frontend.
+# The backend (server.js) requires a separate Node.js hosting solution
+# such as Railway, Render, Heroku, or Netlify Functions.
+# Update API_BASE in public/app.js to point to your backend URL.
+
