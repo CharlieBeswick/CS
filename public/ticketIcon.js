@@ -66,14 +66,14 @@ const TIER_CONFIG = {
   }
 };
 
-// Size presets (reduced by 8x, icons stay same size)
+// Size presets (reduced but still visible, icons stay same size)
 const SIZE_PRESETS = {
-  sm: { width: 15, height: 10 },
-  md: { width: 25, height: 17 },
-  lg: { width: 35, height: 23 }
+  sm: { width: 60, height: 40 },
+  md: { width: 80, height: 53 },
+  lg: { width: 100, height: 67 }
 };
 
-// Icon sizes (kept at original size)
+// Icon sizes (kept at original size, but will appear larger relative to tickets)
 const ICON_SIZES = {
   sm: 30,
   md: 40,
@@ -84,8 +84,8 @@ const ICON_SIZES = {
  * Generate ticket stub SVG path
  * Creates a horizontal ticket with rounded corners and side notches
  */
-function generateTicketPath(width, height, notchRadius = 1.5) {
-  const radius = 2;
+function generateTicketPath(width, height, notchRadius = 4) {
+  const radius = 6;
   const notchY = height / 2;
   
   // Build the path: start from top-left, go clockwise
@@ -259,18 +259,14 @@ function createTicketIcon(tier, size = 'md', showLabel = true) {
   // Icon size is independent of ticket size (kept at original size)
   const iconSize = ICON_SIZES[size] || ICON_SIZES.md;
   
-  // ViewBox needs to be large enough to fit the icon (which is larger than the ticket)
-  const viewBoxWidth = Math.max(ticketWidth, iconSize + 4);
-  const viewBoxHeight = Math.max(ticketHeight, iconSize + 4);
-  const viewBox = `0 0 ${viewBoxWidth} ${viewBoxHeight}`;
+  // ViewBox and SVG size should match ticket size (icon will be centered inside ticket)
+  const viewBox = `0 0 ${ticketWidth} ${ticketHeight}`;
   
   const ticketPath = generateTicketPath(ticketWidth, ticketHeight);
   
-  // Center ticket and icon in viewBox
-  const ticketX = (viewBoxWidth - ticketWidth) / 2;
-  const ticketY = (viewBoxHeight - ticketHeight) / 2;
-  const iconX = viewBoxWidth / 2;
-  const iconY = viewBoxHeight / 2;
+  // Center icon in ticket
+  const iconX = ticketWidth / 2;
+  const iconY = ticketHeight / 2;
   
   // Generate centerpiece icon (centered in viewBox, overlapping ticket)
   let centerpieceIcon = '';
@@ -317,41 +313,39 @@ function createTicketIcon(tier, size = 'md', showLabel = true) {
         </filter>
       </defs>
       
-      <!-- Layer 1: Background with gradient and texture (centered) -->
-      <g transform="translate(${ticketX}, ${ticketY})">
-        <path 
-          d="${ticketPath}" 
-          fill="url(#gradient-${ticketId})"
-        />
-        <path 
-          d="${ticketPath}" 
-          fill="url(#noise-${ticketId})"
-          opacity="0.3"
-        />
-        
-        <!-- Layer 2: Glowing border (with pulse animation class) -->
-        <path 
-          class="ticket-border-glow"
-          d="${ticketPath}" 
-          fill="none" 
-          stroke="${config.borderColor}" 
-          stroke-width="0.4" 
-          stroke-linejoin="round"
-          filter="url(#glow-${ticketId})"
-          opacity="0.8"
-        />
-        
-        <!-- Inner border for depth -->
-        <path 
-          d="${ticketPath}" 
-          fill="none" 
-          stroke="rgba(255,255,255,0.2)" 
-          stroke-width="0.1" 
-          stroke-linejoin="round"
-        />
-      </g>
+      <!-- Layer 1: Background with gradient and texture -->
+      <path 
+        d="${ticketPath}" 
+        fill="url(#gradient-${ticketId})"
+      />
+      <path 
+        d="${ticketPath}" 
+        fill="url(#noise-${ticketId})"
+        opacity="0.3"
+      />
       
-      <!-- Layer 3: Centerpiece icon (larger relative to ticket) -->
+      <!-- Layer 2: Glowing border (with pulse animation class) -->
+      <path 
+        class="ticket-border-glow"
+        d="${ticketPath}" 
+        fill="none" 
+        stroke="${config.borderColor}" 
+        stroke-width="2" 
+        stroke-linejoin="round"
+        filter="url(#glow-${ticketId})"
+        opacity="0.8"
+      />
+      
+      <!-- Inner border for depth -->
+      <path 
+        d="${ticketPath}" 
+        fill="none" 
+        stroke="rgba(255,255,255,0.2)" 
+        stroke-width="0.5" 
+        stroke-linejoin="round"
+      />
+      
+      <!-- Layer 3: Centerpiece icon (centered in ticket) -->
       ${centerpieceIcon}
     </svg>
   `;
