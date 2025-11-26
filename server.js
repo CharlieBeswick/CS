@@ -66,18 +66,24 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 // Health check - MUST be early for Railway health checks
+// Keep it simple and fast - Railway needs this to pass
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ 
+  // Log health check requests so we can see if Railway is hitting it
+  console.log(`[HEALTH] Health check requested at ${new Date().toISOString()}`);
+  // No middleware, no database calls, just respond immediately
+  res.status(200).setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify({ 
     ok: true, 
     timestamp: new Date().toISOString(),
     port: PORT,
     pid: process.pid,
     uptime: process.uptime()
-  });
+  }));
 });
 
 // Root path for Railway health checks - respond immediately
 app.get('/', (req, res) => {
+  console.log(`[ROOT] Root endpoint requested at ${new Date().toISOString()}`);
   res.status(200).json({ 
     ok: true, 
     service: 'Crypto Snow API', 
