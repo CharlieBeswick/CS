@@ -107,7 +107,9 @@ app.use(session({
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production', // Use secure cookies in production (HTTPS)
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax',
+    // Use 'none' for cross-origin cookies (Netlify frontend + Railway backend)
+    // 'lax' only works for same-site cookies
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   },
 }));
 
