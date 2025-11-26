@@ -37,9 +37,14 @@ const appState = {
   wheelState: {
     isSpinning: false,
     currentRotation: 0, // degrees
-    currentSpeed: 0, // degrees per second
-    spinInterval: null,
-    lastUpdateTime: null,
+    rotationStart: 0,
+    rotationEnd: 0,
+    startTimestamp: null,
+    endTimestamp: null,
+    totalDuration: 0,
+    animationFrame: null,
+    roundId: null,
+    winningSegmentReported: false,
   },
 };
 
@@ -749,8 +754,8 @@ function setCurrentUser(user) {
   // Load wallet and free attempts status when user is set
   // Add a small delay to ensure session cookie is processed
   setTimeout(() => {
-    loadWallet();
-    loadFreeAttemptsStatus();
+  loadWallet();
+  loadFreeAttemptsStatus();
   }, 200);
 
   // Update balance UI (legacy - deprecated)
@@ -1235,7 +1240,7 @@ async function loadWalletSummary() {
   } catch (error) {
     // Only log if it's not a 401 (session not ready yet)
     if (!error.message.includes('401') && !error.message.includes('Unauthorized')) {
-      console.warn('Failed to load wallet summary:', error);
+    console.warn('Failed to load wallet summary:', error);
     }
     // Graceful degradation: show "—" for all tiers
     renderWalletSummary(true);
@@ -1817,19 +1822,9 @@ function renderBronzeWheel() {
 
   if (status === 'SPINNING') {
     wheelGraphic.classList.add('spinning');
-    // Start synchronized wheel animation if not already spinning
+    // Start physics-based spinning if not already spinning
     if (!appState.wheelState.isSpinning) {
-      const finalRotation = lobby.round?.finalRotation;
-      const spinStartedAt = lobby.round?.spinStartedAt;
-      if (finalRotation !== null && finalRotation !== undefined) {
-        // Use server-provided final rotation for synchronization
-        // Use server's spinStartedAt timestamp to synchronize animation start time
-        startSynchronizedWheelAnimation(wheelGraphic, finalRotation, winningNumberEl, spinStartedAt);
-      } else {
-        // Fallback to physics if finalRotation not available (backwards compatibility)
-        const spinForceTotal = lobby.round?.spinForceTotal || 0;
-        startWheelPhysics(wheelGraphic, spinForceTotal, winningNumberEl);
-      }
+      startWheelPhysics(wheelGraphic, lobby.round, winningNumberEl);
     } else {
       // Already spinning - update winning number and highlight in real-time
       const currentSegment = getSegmentUnderArrow(appState.wheelState.currentRotation);
@@ -1838,31 +1833,20 @@ function renderBronzeWheel() {
       updateCurrentSegmentHighlight(wheelGraphic, currentSegment);
     }
   } else if (status === 'RESOLVED') {
-    // Only stop if the wheel has naturally stopped, otherwise let it continue
-    if (!appState.wheelState.isSpinning || appState.wheelState.currentSpeed <= 0.1) {
-      // Wheel has stopped, preserve final position
-      stopWheelPhysics();
     wheelGraphic.classList.remove('spinning');
-      // Preserve the wheel's final rotation - don't reset it
-      const svg = wheelGraphic.querySelector('.wheel-svg');
-      if (svg && appState.wheelState.currentRotation !== undefined) {
-        // Keep the wheel at its final position
-        svg.style.transform = `rotate(${appState.wheelState.currentRotation}deg)`;
-        svg.style.transition = 'none';
-      }
-      // Use final wheel position for winning number (more accurate than backend)
-      const finalNumber = getSegmentUnderArrow(appState.wheelState.currentRotation);
-      winningNumberEl.textContent = finalNumber ?? '??';
-      // Highlight winning segment
-      if (finalNumber) {
-        highlightWinningSegment(wheelGraphic, finalNumber);
-      }
-  } else {
-      // Wheel is still spinning, let it continue until it stops naturally
-      // Keep updating the display
-      const currentSegment = getSegmentUnderArrow(appState.wheelState.currentRotation);
-      winningNumberEl.textContent = currentSegment ?? '??';
-      updateCurrentSegmentHighlight(wheelGraphic, currentSegment);
+    // Stop any active animation
+    stopWheelPhysics();
+    const svg = wheelGraphic.querySelector('.wheel-svg');
+    const finalRotation = lobby.round?.spinRotationEnd ?? appState.wheelState.currentRotation;
+    if (svg && typeof finalRotation === 'number') {
+      svg.style.transform = `rotate(${finalRotation}deg)`;
+      svg.style.transition = 'none';
+      appState.wheelState.currentRotation = finalRotation;
+    }
+    const finalNumber = backendWinningNumber ?? getSegmentUnderArrow(appState.wheelState.currentRotation);
+    winningNumberEl.textContent = finalNumber ?? '??';
+    if (finalNumber) {
+      highlightWinningSegment(wheelGraphic, finalNumber);
     }
   } else {
     // Stop any spinning and reset only if not already resolved
@@ -2062,275 +2046,96 @@ function highlightWinningSegment(container, winningNumber) {
   });
 }
 
-/**
- * Start physics-based wheel spinning
- * @param {HTMLElement} wheelGraphic - Wheel container element
- * @param {number} spinForceTotal - Initial spin force (degrees per second)
- * @param {HTMLElement} winningNumberEl - Element to display current winning number
- */
-/**
- * Start synchronized wheel animation that animates to server-provided final rotation
- * This ensures all clients see the wheel stop at the same position
- * @param {number} finalRotation - Server-calculated final rotation (0-360)
- * @param {string|Date} spinStartedAt - Server timestamp when spin started (for synchronization)
- */
-function startSynchronizedWheelAnimation(wheelGraphic, finalRotation, winningNumberEl, spinStartedAt) {
-  // Stop any existing spin and reset state
-  stopWheelPhysics();
-  appState.wheelState.winningSegmentReported = false;
-  
-  const svg = wheelGraphic.querySelector('.wheel-svg');
-  if (!svg) return;
-  
-  // Animation parameters
-  const ANIMATION_DURATION = 5000; // 5 seconds - must match backend spinDurationMs
-  const START_ROTATION = 0;
-  const TARGET_ROTATION = finalRotation;
-  
-  // Calculate synchronized start time using server timestamp
-  // This ensures all clients start the animation at the same relative time
-  let serverStartTime;
-  if (spinStartedAt) {
-    serverStartTime = new Date(spinStartedAt).getTime();
-  } else {
-    // Fallback: use current time if server timestamp not available
-    serverStartTime = Date.now();
-  }
-  
-  // Calculate how much time has elapsed since server started the spin
-  const elapsedSinceServerStart = Date.now() - serverStartTime;
-  
-  // If animation already started on server, adjust our start time
-  // This ensures we're synchronized even if we join late
-  const START_TIME = Date.now() - Math.min(elapsedSinceServerStart, ANIMATION_DURATION);
-  
-  // Add multiple full rotations for visual effect
-  // Use deterministic calculation based on finalRotation to ensure all clients use same value
-  // This matches the backend's calculation approach
-  const EXTRA_ROTATIONS = 5 + (Math.floor(TARGET_ROTATION / 36) % 5); // 5-9 extra rotations (deterministic)
-  const TOTAL_ROTATION = (EXTRA_ROTATIONS * 360) + TARGET_ROTATION;
-  
-  // Initialize state
-  appState.wheelState.isSpinning = true;
-  appState.wheelState.currentRotation = START_ROTATION;
-  appState.wheelState.lastUpdateTime = START_TIME;
-  appState.wheelState.winningSegmentReported = false;
-  appState.wheelState.targetRotation = TARGET_ROTATION;
-  
-  // Apply initial rotation
-  svg.style.transform = `rotate(0deg)`;
-  svg.style.transition = 'none';
-  
-  // Animation loop
-  function updateWheel() {
-    if (!appState.wheelState.isSpinning) return;
-    
-    const now = Date.now();
-    const elapsed = now - START_TIME;
-    const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
-    
-    // Ease-out cubic function for smooth deceleration
-    const easeOutCubic = 1 - Math.pow(1 - progress, 3);
-    
-    // Calculate current rotation
-    const currentRotation = START_ROTATION + (TOTAL_ROTATION * easeOutCubic);
-    appState.wheelState.currentRotation = currentRotation % 360;
-    if (appState.wheelState.currentRotation < 0) {
-      appState.wheelState.currentRotation += 360;
-    }
-    
-    // Apply rotation to SVG
-    svg.style.transform = `rotate(${currentRotation}deg)`;
-    
-    // Update text rotations to keep numbers upright
-    const textGroups = svg.querySelectorAll('g[data-base-rot]');
-    textGroups.forEach(group => {
-      const baseRot = parseFloat(group.getAttribute('data-base-rot'));
-      const currentTransform = group.getAttribute('transform') || '';
-      const translateMatch = currentTransform.match(/translate\(([^)]+)\)/);
-      if (translateMatch) {
-        const [x, y] = translateMatch[1].split(',').map(v => parseFloat(v.trim()));
-        const newCounterRot = baseRot - currentRotation;
-        group.setAttribute('transform', `translate(${x}, ${y}) rotate(${newCounterRot})`);
-      }
-    });
-    
-    // Update winning number display in real-time
-    const currentSegment = getSegmentUnderArrow(currentRotation);
-    if (winningNumberEl) {
-      winningNumberEl.textContent = currentSegment ?? '??';
-    }
-    
-    // Update highlighted segment in real-time
-    updateCurrentSegmentHighlight(wheelGraphic, currentSegment);
-    
-    // Check if animation is complete
-    if (progress >= 1) {
-      // Animation complete - set final rotation EXACTLY to match server
-      // Normalize TARGET_ROTATION to 0-360 range to ensure precision
-      const normalizedTarget = ((TARGET_ROTATION % 360) + 360) % 360;
-      appState.wheelState.currentRotation = normalizedTarget;
-      svg.style.transform = `rotate(${normalizedTarget}deg)`;
-      
-      // Update text rotations for final position
-      textGroups.forEach(group => {
-        const baseRot = parseFloat(group.getAttribute('data-base-rot'));
-        const currentTransform = group.getAttribute('transform') || '';
-        const translateMatch = currentTransform.match(/translate\(([^)]+)\)/);
-        if (translateMatch) {
-          const [x, y] = translateMatch[1].split(',').map(v => parseFloat(v.trim()));
-          const newCounterRot = baseRot - normalizedTarget;
-          group.setAttribute('transform', `translate(${x}, ${y}) rotate(${newCounterRot})`);
-        }
-      });
-      
-      // Use backend's winning segment (already calculated from seed)
-      // This ensures all clients use the same winning segment
-      const backendWinningSegment = appState.currentTierLobby?.round?.winningSegment || appState.bronzeLobby?.round?.winningSegment;
-      const finalSegment = backendWinningSegment || getSegmentUnderArrow(normalizedTarget);
-      
-      if (winningNumberEl) {
-        winningNumberEl.textContent = finalSegment ?? '??';
-      }
-      
-      // Final highlight update
-      updateCurrentSegmentHighlight(wheelGraphic, finalSegment);
-      
-      // Report winning segment to backend (only once, and only if not already resolved)
-      // Use backend's calculated segment to ensure consistency
-      if (!appState.wheelState.winningSegmentReported && backendWinningSegment) {
-        appState.wheelState.winningSegmentReported = true;
-        reportWinningSegment(backendWinningSegment);
-      }
-      
-      // Stop the animation
-      stopWheelPhysics();
-    } else {
-      // Continue animation
-      appState.wheelState.spinInterval = requestAnimationFrame(updateWheel);
-    }
-  }
-  
-  // Start the animation loop
-  appState.wheelState.spinInterval = requestAnimationFrame(updateWheel);
+function easeOutCubic(t) {
+  const clamped = Math.max(0, Math.min(1, t));
+  return 1 - Math.pow(1 - clamped, 3);
 }
 
 /**
- * Start physics-based wheel animation (fallback for backwards compatibility)
+ * Start server-synchronized wheel animation
+ * @param {HTMLElement} wheelGraphic - Wheel container element
+ * @param {object} round - Lobby round payload with spin metadata
+ * @param {HTMLElement} winningNumberEl - Element to display current winning number
  */
-function startWheelPhysics(wheelGraphic, spinForceTotal, winningNumberEl) {
-  // Stop any existing spin and reset state
+function startWheelPhysics(wheelGraphic, round, winningNumberEl) {
   stopWheelPhysics();
-  appState.wheelState.winningSegmentReported = false; // Reset for new spin
-  
-  const svg = wheelGraphic.querySelector('.wheel-svg');
-  if (!svg) return;
-  
-  // Multiply the spin force to make it much stronger
-  // spinForceTotal is typically 20-180 (sum of lucky numbers 2-9 for 20 players)
-  // Multiply by 50 to get 1000-9000 degrees per second initial speed
-  const FORCE_MULTIPLIER = 50;
-  const initialSpeed = spinForceTotal * FORCE_MULTIPLIER; // degrees per second
-  
-  // Deceleration rate: aggressive deceleration (3x more than before)
-  // This creates a strong initial spin that decelerates quickly
-  const DECELERATION_RATE = Math.max(6, initialSpeed * 0.06); // 6% of initial speed per second (3x more aggressive), minimum 6
-  
-  // Initialize state
+  appState.wheelState.winningSegmentReported = false;
+  if (!wheelGraphic || !round) return;
+  const wheelSvg = wheelGraphic.querySelector('.wheel-svg');
+  if (!wheelSvg) return;
+
+  const startTimestamp = new Date(round.spinStartedAt || Date.now()).getTime();
+  const endTimestamp = new Date(round.spinCompletedAt || startTimestamp + 4000).getTime();
+  if (!Number.isFinite(startTimestamp) || !Number.isFinite(endTimestamp) || endTimestamp <= startTimestamp) {
+    return;
+  }
+
+  const rotationStart = round.spinRotationStart ?? 0;
+  let rotationEnd = round.spinRotationEnd;
+  if (rotationEnd == null) {
+    const totalDegrees = round.spinTotalDegrees ?? (round.spinForceFinal || 360);
+    rotationEnd = rotationStart + totalDegrees;
+  }
+
+  const totalDuration = endTimestamp - startTimestamp;
+  const elapsedNow = Math.max(0, Date.now() - startTimestamp);
+  const clampedElapsed = Math.min(elapsedNow, totalDuration);
+  const initialProgress = clampedElapsed / totalDuration;
+  const easedInitial = easeOutCubic(initialProgress);
+  const initialRotation = rotationStart + (rotationEnd - rotationStart) * easedInitial;
+
+  if (appState.wheelState.animationFrame) {
+    cancelAnimationFrame(appState.wheelState.animationFrame);
+  }
+
   appState.wheelState.isSpinning = true;
-  appState.wheelState.currentRotation = 0;
-  appState.wheelState.currentSpeed = initialSpeed; // degrees per second
-  appState.wheelState.lastUpdateTime = Date.now();
-  appState.wheelState.decelerationRate = DECELERATION_RATE;
-  appState.wheelState.winningSegmentReported = false; // Track if we've already reported the winning segment
-  
-  // Apply initial rotation
-  svg.style.transform = `rotate(0deg)`;
-  svg.style.transition = 'none';
-  
-  // Start physics loop (60 FPS)
-  function updateWheel() {
-    if (!appState.wheelState.isSpinning) return;
-    
-    const now = Date.now();
-    const deltaTime = (now - appState.wheelState.lastUpdateTime) / 1000; // seconds
-    appState.wheelState.lastUpdateTime = now;
-    
-    // Update rotation based on current speed
-    appState.wheelState.currentRotation += appState.wheelState.currentSpeed * deltaTime;
-    
-    // Normalize rotation to 0-360 range
-    appState.wheelState.currentRotation = appState.wheelState.currentRotation % 360;
-    if (appState.wheelState.currentRotation < 0) {
-      appState.wheelState.currentRotation += 360;
+  appState.wheelState.rotationStart = rotationStart;
+  appState.wheelState.rotationEnd = rotationEnd;
+  appState.wheelState.startTimestamp = startTimestamp;
+  appState.wheelState.endTimestamp = endTimestamp;
+  appState.wheelState.totalDuration = totalDuration;
+  appState.wheelState.currentRotation = initialRotation;
+  appState.wheelState.roundId = round.id;
+  appState.wheelState.winningSegmentReported = false;
+
+  wheelSvg.style.transition = 'none';
+  wheelSvg.style.transform = `rotate(${initialRotation}deg)`;
+
+  function updateWheelTimeline() {
+    if (!appState.wheelState.isSpinning || appState.wheelState.roundId !== round.id) {
+      return;
     }
-    
-    // Apply rotation to SVG
-    svg.style.transform = `rotate(${appState.wheelState.currentRotation}deg)`;
-    
-    // Update text rotations to keep numbers upright
-    // Counter-rotate text groups by the wheel's rotation to keep them upright
-    const textGroups = svg.querySelectorAll('g[data-base-rot]');
-    textGroups.forEach(group => {
-      const baseRot = parseFloat(group.getAttribute('data-base-rot'));
-      const currentTransform = group.getAttribute('transform') || '';
-      const translateMatch = currentTransform.match(/translate\(([^)]+)\)/);
-      if (translateMatch) {
-        const [x, y] = translateMatch[1].split(',').map(v => parseFloat(v.trim()));
-        // Counter-rotate by the wheel's rotation to keep text upright
-        const newCounterRot = baseRot - appState.wheelState.currentRotation;
-        group.setAttribute('transform', `translate(${x}, ${y}) rotate(${newCounterRot})`);
-      }
-    });
-    
-    // Decrease speed by deceleration rate per second
-    // Since we're updating at 60 FPS, decrease proportionally per frame
-    appState.wheelState.currentSpeed = Math.max(0, appState.wheelState.currentSpeed - (appState.wheelState.decelerationRate * deltaTime));
-    
-    // Update winning number display in real-time (what's currently under the arrow)
-    const currentSegment = getSegmentUnderArrow(appState.wheelState.currentRotation);
+    const now = Date.now();
+    const elapsed = Math.min(Math.max(now - startTimestamp, 0), totalDuration);
+    const progress = elapsed / totalDuration;
+    const eased = easeOutCubic(progress);
+    const rotation = rotationStart + (rotationEnd - rotationStart) * eased;
+    appState.wheelState.currentRotation = rotation;
+    wheelSvg.style.transform = `rotate(${rotation}deg)`;
+    wheelSvg.style.transition = 'none';
+
+    const currentSegment = getSegmentUnderArrow(rotation);
     if (winningNumberEl) {
       winningNumberEl.textContent = currentSegment ?? '??';
     }
-    
-    // Update highlighted segment in real-time as wheel spins
     updateCurrentSegmentHighlight(wheelGraphic, currentSegment);
-    
-    // Check if wheel has stopped (speed must be very close to 0)
-    // Only report winning segment once when speed reaches near-zero
-    if (appState.wheelState.currentSpeed <= 0.05 && !appState.wheelState.winningSegmentReported) {
-      // Wheel has truly stopped - determine winning segment
-      appState.wheelState.currentSpeed = 0;
-      appState.wheelState.winningSegmentReported = true;
-      
-      // The winning number is now determined by the final position
-      const finalSegment = getSegmentUnderArrow(appState.wheelState.currentRotation);
+
+    if (progress >= 0.999) {
+      appState.wheelState.isSpinning = false;
+      appState.wheelState.animationFrame = null;
       if (winningNumberEl) {
-        winningNumberEl.textContent = finalSegment ?? '??';
+        winningNumberEl.textContent = round.winningNumber ?? currentSegment ?? '??';
       }
-      
-      // Final highlight update
-      updateCurrentSegmentHighlight(wheelGraphic, finalSegment);
-      
-      // Report winning segment to backend (only once)
-      reportWinningSegment(finalSegment);
-      
-      // Stop the physics loop
-      stopWheelPhysics();
-      
-      // Preserve the final rotation - don't reset it
-    } else if (appState.wheelState.currentSpeed > 0.05) {
-      // Continue spinning - only continue if speed is above threshold
-      appState.wheelState.spinInterval = requestAnimationFrame(updateWheel);
-    } else {
-      // Speed is at or below 0.05 but already reported - ensure it stays stopped
-      appState.wheelState.currentSpeed = 0;
-      stopWheelPhysics();
+      if (round.winningNumber) {
+        highlightWinningSegment(wheelGraphic, round.winningNumber);
+      }
+      return;
     }
+
+    appState.wheelState.animationFrame = requestAnimationFrame(updateWheelTimeline);
   }
-  
-  // Start the physics loop
-  appState.wheelState.spinInterval = requestAnimationFrame(updateWheel);
+
+  appState.wheelState.animationFrame = requestAnimationFrame(updateWheelTimeline);
 }
 
 /**
@@ -2365,63 +2170,15 @@ function updateCurrentSegmentHighlight(wheelGraphic, segmentNumber) {
 }
 
 /**
- * Report winning segment to backend when wheel stops
- */
-async function reportWinningSegment(winningSegment) {
-  const currentTier = appState.currentTier || 'BRONZE';
-  const lobby = appState.currentTierLobby || appState.bronzeLobby;
-  if (!lobby || !lobby.id || !winningSegment) return;
-  
-  // Don't report if lobby is already resolved (prevents duplicate reports)
-  if (lobby.status === 'RESOLVED') {
-    console.log('[wheel] Lobby already resolved, skipping report');
-    return;
-  }
-  
-  try {
-    const response = await fetch(`${API_BASE}/api/lobbies/${lobby.id}/resolve`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        winningSegment: winningSegment,
-        winningNumber: winningSegment,
-      }),
-    });
-    
-    const data = await response.json();
-    if (data.ok) {
-      console.log('[wheel] Winning segment reported to backend:', winningSegment);
-      // Refresh lobby state to get updated status
-      if (appState.tierLobbyInterval) {
-        // Trigger immediate refresh
-        const tier = appState.currentTier || 'BRONZE';
-        fetchTierLobbyState(tier);
-      }
-    } else {
-      // Don't log errors for already-resolved lobbies (idempotent)
-      if (!data.error || !data.error.includes('not in SPINNING state')) {
-        console.error('[wheel] Failed to report winning segment:', data.error);
-      }
-    }
-  } catch (error) {
-    // Don't log errors for network issues if lobby is already resolved
-    console.error('[wheel] Error reporting winning segment:', error);
-  }
-}
-
-/**
  * Stop wheel physics
  */
 function stopWheelPhysics() {
   appState.wheelState.isSpinning = false;
-  if (appState.wheelState.spinInterval) {
-    cancelAnimationFrame(appState.wheelState.spinInterval);
-    appState.wheelState.spinInterval = null;
+  if (appState.wheelState.animationFrame) {
+    cancelAnimationFrame(appState.wheelState.animationFrame);
+    appState.wheelState.animationFrame = null;
   }
-  appState.wheelState.currentSpeed = 0;
+  appState.wheelState.roundId = null;
   // Don't reset winningSegmentReported here - it should persist until a new spin starts
   
   // Final update of text rotations to keep them upright at final position
@@ -2994,7 +2751,7 @@ function showScreen(screenName) {
     screens.lobby.style.display = 'block';
     // Add small delay to ensure session is ready after login
     setTimeout(() => {
-      loadLobbyContent(); // Load wallet summary and render tier buttons
+    loadLobbyContent(); // Load wallet summary and render tier buttons
     }, 300);
   } else if (screenName === 'bronzeLobby' && screens.bronzeLobby) {
     screens.bronzeLobby.style.display = 'block';

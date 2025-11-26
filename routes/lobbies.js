@@ -8,7 +8,6 @@ const {
   getActiveLobbyState,
   postChatMessage,
   fetchChatMessages,
-  resolveLobbyWithWinningSegment,
 } = require('../lib/lobbyService');
 
 router.use(requireAuth);
@@ -92,24 +91,11 @@ router.post('/:lobbyId/chat', async (req, res) => {
   }
 });
 
-router.post('/:lobbyId/resolve', async (req, res) => {
-  try {
-    const { winningSegment, winningNumber } = req.body || {};
-    if (!winningSegment && !winningNumber) {
-      return res.status(400).json({ ok: false, error: 'Winning segment or number is required' });
-    }
-    
-    const lobby = await resolveLobbyWithWinningSegment({
-      lobbyId: req.params.lobbyId,
-      userId: req.user.id,
-      winningSegment: winningSegment || winningNumber,
-      winningNumber: winningNumber || winningSegment,
-    });
-    res.json({ ok: true, lobby });
-  } catch (error) {
-    console.error('Error resolving lobby:', error);
-    res.status(400).json({ ok: false, error: error.message || 'Failed to resolve lobby' });
-  }
+router.post('/:lobbyId/resolve', (req, res) => {
+  res.status(410).json({
+    ok: false,
+    error: 'Client-side spin reporting has been deprecated. The server now resolves spins automatically.',
+  });
 });
 
 module.exports = router;

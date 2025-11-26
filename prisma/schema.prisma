@@ -196,8 +196,10 @@ model LobbyRound {
   spinForceBase    Int
   spinForceTotal   Int
   spinForceFinal   Int
+  spinRotationStart Float?
+  spinRotationEnd   Float?
+  spinTotalDegrees  Float?
   seed             String?
-  finalRotation    Float?    // Final rotation angle in degrees (0-360) - deterministic from seed for synchronized wheel
   wheelSegments    Json?
   winningSegment   Int?
   winningNumber    Int?
@@ -239,6 +241,9 @@ model GameHistory {
   spinForceBase      Int
   spinForceTotal     Int
   spinForceFinal     Int
+  spinRotationStart  Float?
+  spinRotationEnd    Float?
+  spinTotalDegrees   Float?
   winningNumber      Int?
   winningSegment     Int?
   seed               String?
