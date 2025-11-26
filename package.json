@@ -7,8 +7,9 @@
     "start": "node server.js",
     "dev": "node server.js",
     "build": "echo 'No build step required - static files in public/'",
-    "postinstall": "npx prisma generate",
-    "migrate": "npx prisma migrate deploy"
+    "postinstall": "node scripts/conditional-prisma.js",
+    "migrate": "npx prisma migrate deploy",
+    "railway:start": "npm run migrate && npm start"
   },
   "keywords": [
     "crypto-tickets",

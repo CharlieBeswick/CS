@@ -1,9 +1,12 @@
 [build]
   publish = "public"
   command = "npm run build"
+  ignore = "node_modules/**"
 
 [build.environment]
   NODE_VERSION = "18"
+  # Skip Prisma generation for Netlify (frontend only)
+  SKIP_PRISMA = "true"
 
 # Redirects for SPA routing
 [[redirects]]
