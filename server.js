@@ -64,6 +64,22 @@ app.use(cors(corsOptions));
 
 // Handle preflight requests explicitly
 app.options('*', cors(corsOptions));
+
+// Health check - MUST be early for Railway health checks
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ ok: true, timestamp: new Date().toISOString() });
+});
+
+// Root path for Railway health checks - respond immediately
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    ok: true, 
+    service: 'Crypto Snow API', 
+    status: 'running',
+    timestamp: new Date().toISOString() 
+  });
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -119,20 +135,6 @@ app.get('/admin/debug-session', (req, res) => {
   });
 });
 
-// Health check - must respond quickly for Railway
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ ok: true, timestamp: new Date().toISOString() });
-});
-
-// Root path for Railway health checks - respond immediately
-app.get('/', (req, res) => {
-  res.status(200).json({ 
-    ok: true, 
-    service: 'Crypto Snow API', 
-    status: 'running',
-    timestamp: new Date().toISOString() 
-  });
-});
 
 // Route test endpoint (for debugging)
 app.get('/api/test-routes', (req, res) => {
@@ -170,6 +172,8 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server is listening and ready to accept connections`);
   console.log(`✅ Health check available at http://0.0.0.0:${PORT}/api/health`);
   console.log(`✅ Root endpoint available at http://0.0.0.0:${PORT}/`);
+  console.log(`✅ Process PID: ${process.pid}`);
+  console.log(`✅ Railway PORT env: ${process.env.PORT || 'not set'}`);
   console.log(`Make sure to configure Google OAuth credentials in config/google.json`);
   console.log(`Or set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables`);
   
@@ -178,6 +182,11 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     console.error('Error initializing lobbies:', err);
     console.log('Server is running, but lobbies may not be initialized. This is OK for first startup.');
   });
+  
+  // Keep process alive - log every 30 seconds to prove we're running
+  setInterval(() => {
+    console.log(`[${new Date().toISOString()}] Server is still running on port ${PORT}`);
+  }, 30000);
 });
 
 // Handle server errors
