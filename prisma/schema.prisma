@@ -12,12 +12,17 @@ datasource db {
 
 model User {
   id              String   @id @default(cuid())
-  googleSub       String   @unique
+  googleSub       String?  @unique // Optional - only for Google OAuth users
   email           String   @unique
   name            String?
   picture         String?
   publicName      String?
   avatarUrl       String?
+  // Email/password authentication fields
+  passwordHash     String?  // bcrypt hash for email/password users
+  dateOfBirth      DateTime? // Date of birth for age verification
+  age              Int?     // Calculated age
+  fullName         String?  // Full name for email/password users
   credits         Int      @default(0) // TODO: Deprecated - migrate to ticketWallet
   ticketWallet    Json?    // { "BRONZE": 0, "SILVER": 0, ... } - 8-tier ticket wallet
   role            Role     @default(PLAYER)

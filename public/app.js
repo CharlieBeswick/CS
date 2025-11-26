@@ -69,6 +69,34 @@ async function init() {
   setupEventListeners();
   
   // Set up the big sign-in button - it will click Google's rendered button
+  // Email/password form handlers
+  const emailLoginForm = document.getElementById('emailLoginForm');
+  if (emailLoginForm) {
+    emailLoginForm.addEventListener('submit', handleEmailLogin);
+  }
+
+  const emailRegisterForm = document.getElementById('emailRegisterForm');
+  if (emailRegisterForm) {
+    emailRegisterForm.addEventListener('submit', handleEmailRegister);
+  }
+
+  // Toggle between login and register forms
+  const showRegisterLink = document.getElementById('showRegisterLink');
+  if (showRegisterLink) {
+    showRegisterLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      showRegisterForm();
+    });
+  }
+
+  const showLoginLink = document.getElementById('showLoginLink');
+  if (showLoginLink) {
+    showLoginLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      showLoginForm();
+    });
+  }
+
   const bigSignInBtn = document.getElementById('bigSignInBtn');
   if (bigSignInBtn) {
     bigSignInBtn.addEventListener('click', () => {
@@ -568,6 +596,98 @@ async function handleGoogleSignInWithToken(accessToken) {
     errorDiv.textContent = error.message || 'Sign-in failed. Please try again.';
     errorDiv.style.display = 'block';
   }
+}
+
+/**
+ * Handle email/password login
+ */
+async function handleEmailLogin(event) {
+  event.preventDefault();
+  const errorDiv = document.getElementById('loginError');
+  errorDiv.style.display = 'none';
+
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json();
+
+    if (data.ok) {
+      setCurrentUser(data.user);
+    } else {
+      throw new Error(data.error || 'Login failed');
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    errorDiv.textContent = error.message || 'Login failed. Please try again.';
+    errorDiv.style.display = 'block';
+  }
+}
+
+/**
+ * Handle email/password registration
+ */
+async function handleEmailRegister(event) {
+  event.preventDefault();
+  const errorDiv = document.getElementById('loginError');
+  errorDiv.style.display = 'none';
+
+  const fullName = document.getElementById('registerFullName').value;
+  const email = document.getElementById('registerEmail').value;
+  const dateOfBirth = document.getElementById('registerDateOfBirth').value;
+  const password = document.getElementById('registerPassword').value;
+
+  // Validation
+  if (password.length < 8) {
+    errorDiv.textContent = 'Password must be at least 8 characters long';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ fullName, email, dateOfBirth, password }),
+    });
+
+    const data = await res.json();
+
+    if (data.ok) {
+      setCurrentUser(data.user);
+    } else {
+      throw new Error(data.error || 'Registration failed');
+    }
+  } catch (error) {
+    console.error('Registration error:', error);
+    errorDiv.textContent = error.message || 'Registration failed. Please try again.';
+    errorDiv.style.display = 'block';
+  }
+}
+
+/**
+ * Toggle between login and registration forms
+ */
+function showLoginForm() {
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('registerForm').style.display = 'none';
+}
+
+function showRegisterForm() {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('registerForm').style.display = 'block';
 }
 
 /**
