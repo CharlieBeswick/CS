@@ -68,9 +68,9 @@ const TIER_CONFIG = {
 
 // Size presets (reduced but still visible, icons stay same size)
 const SIZE_PRESETS = {
-  sm: { width: 60, height: 40 },
-  md: { width: 80, height: 53 },
-  lg: { width: 100, height: 67 }
+  sm: { width: 45, height: 30 },
+  md: { width: 60, height: 40 },
+  lg: { width: 75, height: 50 }
 };
 
 // Icon sizes (kept at original size, but will appear larger relative to tickets)
