@@ -126,15 +126,16 @@ app.use((err, req, res, next) => {
   res.status(500).json({ ok: false, error: 'Internal server error' });
 });
 
-// Initialize lobbies on startup (before server starts)
-initializeAllLobbies().catch(err => {
-  console.error('Error initializing lobbies:', err);
-});
-
-// Start server
+// Start server first (don't block on lobby initialization)
 app.listen(PORT, () => {
   console.log(`Crypto Tickets server running on http://localhost:${PORT}`);
   console.log(`Make sure to configure Google OAuth credentials in config/google.json`);
   console.log(`Or set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables`);
+  
+  // Initialize lobbies after server starts (non-blocking)
+  initializeAllLobbies().catch(err => {
+    console.error('Error initializing lobbies:', err);
+    console.log('Server is running, but lobbies may not be initialized. This is OK for first startup.');
+  });
 });
 

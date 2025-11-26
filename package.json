@@ -9,7 +9,7 @@
     "build": "echo 'No build step required - static files in public/'",
     "postinstall": "node scripts/conditional-prisma.js",
     "migrate": "npx prisma migrate deploy",
-    "railway:start": "npm run migrate && npm start"
+    "railway:start": "node scripts/railway-start.js"
   },
   "keywords": [
     "crypto-tickets",
