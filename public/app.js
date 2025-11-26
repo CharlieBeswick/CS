@@ -141,10 +141,14 @@ async function checkAuth() {
       setCurrentUser(data.user);
       // loadTombolas(); // Disabled - lobby redesigned
     } else {
+      // Clear any stale user state
+      setCurrentUser(null);
       showScreen('login');
     }
   } catch (error) {
     console.error('Auth check error:', error);
+    // Clear any stale user state on error
+    setCurrentUser(null);
     showScreen('login');
   }
 }
@@ -628,10 +632,14 @@ async function handleEmailLogin(event) {
       await checkAuth();
       setCurrentUser(data.user);
     } else {
+      // Clear any stale user state on login failure
+      setCurrentUser(null);
       throw new Error(data.error || 'Login failed');
     }
   } catch (error) {
     console.error('Login error:', error);
+    // Clear user state on error
+    setCurrentUser(null);
     errorDiv.textContent = error.message || 'Login failed. Please try again.';
     errorDiv.style.display = 'block';
   }
@@ -676,10 +684,14 @@ async function handleEmailRegister(event) {
       await checkAuth();
       setCurrentUser(data.user);
     } else {
+      // Clear any stale user state on registration failure
+      setCurrentUser(null);
       throw new Error(data.error || 'Registration failed');
     }
   } catch (error) {
     console.error('Registration error:', error);
+    // Clear user state on error
+    setCurrentUser(null);
     errorDiv.textContent = error.message || 'Registration failed. Please try again.';
     errorDiv.style.display = 'block';
   }
