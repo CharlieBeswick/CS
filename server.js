@@ -134,8 +134,10 @@ app.use((err, req, res, next) => {
 });
 
 // Start server first (don't block on lobby initialization)
-app.listen(PORT, () => {
-  console.log(`Crypto Tickets server running on http://localhost:${PORT}`);
+// Listen on 0.0.0.0 to accept connections from Railway's proxy
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Crypto Tickets server running on http://0.0.0.0:${PORT}`);
+  console.log(`Server is listening and ready to accept connections`);
   console.log(`Make sure to configure Google OAuth credentials in config/google.json`);
   console.log(`Or set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables`);
   
@@ -144,5 +146,26 @@ app.listen(PORT, () => {
     console.error('Error initializing lobbies:', err);
     console.log('Server is running, but lobbies may not be initialized. This is OK for first startup.');
   });
+});
+
+// Handle server errors
+server.on('error', (err) => {
+  console.error('Server error:', err);
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use`);
+  } else {
+    console.error('Unexpected server error:', err);
+  }
+  process.exit(1);
+});
+
+// Handle process errors
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
