@@ -1820,9 +1820,11 @@ function renderBronzeWheel() {
     // Start synchronized wheel animation if not already spinning
     if (!appState.wheelState.isSpinning) {
       const finalRotation = lobby.round?.finalRotation;
+      const spinStartedAt = lobby.round?.spinStartedAt;
       if (finalRotation !== null && finalRotation !== undefined) {
         // Use server-provided final rotation for synchronization
-        startSynchronizedWheelAnimation(wheelGraphic, finalRotation, winningNumberEl);
+        // Use server's spinStartedAt timestamp to synchronize animation start time
+        startSynchronizedWheelAnimation(wheelGraphic, finalRotation, winningNumberEl, spinStartedAt);
       } else {
         // Fallback to physics if finalRotation not available (backwards compatibility)
         const spinForceTotal = lobby.round?.spinForceTotal || 0;
@@ -2069,8 +2071,10 @@ function highlightWinningSegment(container, winningNumber) {
 /**
  * Start synchronized wheel animation that animates to server-provided final rotation
  * This ensures all clients see the wheel stop at the same position
+ * @param {number} finalRotation - Server-calculated final rotation (0-360)
+ * @param {string|Date} spinStartedAt - Server timestamp when spin started (for synchronization)
  */
-function startSynchronizedWheelAnimation(wheelGraphic, finalRotation, winningNumberEl) {
+function startSynchronizedWheelAnimation(wheelGraphic, finalRotation, winningNumberEl, spinStartedAt) {
   // Stop any existing spin and reset state
   stopWheelPhysics();
   appState.wheelState.winningSegmentReported = false;
@@ -2079,15 +2083,31 @@ function startSynchronizedWheelAnimation(wheelGraphic, finalRotation, winningNum
   if (!svg) return;
   
   // Animation parameters
-  const ANIMATION_DURATION = 5000; // 5 seconds
-  const START_TIME = Date.now();
+  const ANIMATION_DURATION = 5000; // 5 seconds - must match backend spinDurationMs
   const START_ROTATION = 0;
   const TARGET_ROTATION = finalRotation;
   
+  // Calculate synchronized start time using server timestamp
+  // This ensures all clients start the animation at the same relative time
+  let serverStartTime;
+  if (spinStartedAt) {
+    serverStartTime = new Date(spinStartedAt).getTime();
+  } else {
+    // Fallback: use current time if server timestamp not available
+    serverStartTime = Date.now();
+  }
+  
+  // Calculate how much time has elapsed since server started the spin
+  const elapsedSinceServerStart = Date.now() - serverStartTime;
+  
+  // If animation already started on server, adjust our start time
+  // This ensures we're synchronized even if we join late
+  const START_TIME = Date.now() - Math.min(elapsedSinceServerStart, ANIMATION_DURATION);
+  
   // Add multiple full rotations for visual effect
-  // Use a deterministic calculation based on target rotation to ensure all clients use the same value
-  // This ensures synchronized animation across all clients
-  const EXTRA_ROTATIONS = 5 + ((TARGET_ROTATION % 5)); // 5-9.99 extra rotations (deterministic)
+  // Use deterministic calculation based on finalRotation to ensure all clients use same value
+  // This matches the backend's calculation approach
+  const EXTRA_ROTATIONS = 5 + (Math.floor(TARGET_ROTATION / 36) % 5); // 5-9 extra rotations (deterministic)
   const TOTAL_ROTATION = (EXTRA_ROTATIONS * 360) + TARGET_ROTATION;
   
   // Initialize state
@@ -2146,9 +2166,11 @@ function startSynchronizedWheelAnimation(wheelGraphic, finalRotation, winningNum
     
     // Check if animation is complete
     if (progress >= 1) {
-      // Animation complete - set final rotation exactly
-      appState.wheelState.currentRotation = TARGET_ROTATION;
-      svg.style.transform = `rotate(${TARGET_ROTATION}deg)`;
+      // Animation complete - set final rotation EXACTLY to match server
+      // Normalize TARGET_ROTATION to 0-360 range to ensure precision
+      const normalizedTarget = ((TARGET_ROTATION % 360) + 360) % 360;
+      appState.wheelState.currentRotation = normalizedTarget;
+      svg.style.transform = `rotate(${normalizedTarget}deg)`;
       
       // Update text rotations for final position
       textGroups.forEach(group => {
@@ -2157,13 +2179,16 @@ function startSynchronizedWheelAnimation(wheelGraphic, finalRotation, winningNum
         const translateMatch = currentTransform.match(/translate\(([^)]+)\)/);
         if (translateMatch) {
           const [x, y] = translateMatch[1].split(',').map(v => parseFloat(v.trim()));
-          const newCounterRot = baseRot - TARGET_ROTATION;
+          const newCounterRot = baseRot - normalizedTarget;
           group.setAttribute('transform', `translate(${x}, ${y}) rotate(${newCounterRot})`);
         }
       });
       
-      // Get final segment (should match winning segment)
-      const finalSegment = getSegmentUnderArrow(TARGET_ROTATION);
+      // Use backend's winning segment (already calculated from seed)
+      // This ensures all clients use the same winning segment
+      const backendWinningSegment = appState.currentTierLobby?.round?.winningSegment || appState.bronzeLobby?.round?.winningSegment;
+      const finalSegment = backendWinningSegment || getSegmentUnderArrow(normalizedTarget);
+      
       if (winningNumberEl) {
         winningNumberEl.textContent = finalSegment ?? '??';
       }
@@ -2171,10 +2196,11 @@ function startSynchronizedWheelAnimation(wheelGraphic, finalRotation, winningNum
       // Final highlight update
       updateCurrentSegmentHighlight(wheelGraphic, finalSegment);
       
-      // Report winning segment to backend (only once)
-      if (!appState.wheelState.winningSegmentReported) {
+      // Report winning segment to backend (only once, and only if not already resolved)
+      // Use backend's calculated segment to ensure consistency
+      if (!appState.wheelState.winningSegmentReported && backendWinningSegment) {
         appState.wheelState.winningSegmentReported = true;
-        reportWinningSegment(finalSegment);
+        reportWinningSegment(backendWinningSegment);
       }
       
       // Stop the animation
@@ -2346,6 +2372,12 @@ async function reportWinningSegment(winningSegment) {
   const lobby = appState.currentTierLobby || appState.bronzeLobby;
   if (!lobby || !lobby.id || !winningSegment) return;
   
+  // Don't report if lobby is already resolved (prevents duplicate reports)
+  if (lobby.status === 'RESOLVED') {
+    console.log('[wheel] Lobby already resolved, skipping report');
+    return;
+  }
+  
   try {
     const response = await fetch(`${API_BASE}/api/lobbies/${lobby.id}/resolve`, {
       method: 'POST',
@@ -2369,9 +2401,13 @@ async function reportWinningSegment(winningSegment) {
         fetchTierLobbyState(tier);
       }
     } else {
-      console.error('[wheel] Failed to report winning segment:', data.error);
+      // Don't log errors for already-resolved lobbies (idempotent)
+      if (!data.error || !data.error.includes('not in SPINNING state')) {
+        console.error('[wheel] Failed to report winning segment:', data.error);
+      }
     }
   } catch (error) {
+    // Don't log errors for network issues if lobby is already resolved
     console.error('[wheel] Error reporting winning segment:', error);
   }
 }
