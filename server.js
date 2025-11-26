@@ -67,7 +67,13 @@ app.options('*', cors(corsOptions));
 
 // Health check - MUST be early for Railway health checks
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ ok: true, timestamp: new Date().toISOString() });
+  res.status(200).json({ 
+    ok: true, 
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    pid: process.pid,
+    uptime: process.uptime()
+  });
 });
 
 // Root path for Railway health checks - respond immediately
@@ -76,7 +82,9 @@ app.get('/', (req, res) => {
     ok: true, 
     service: 'Crypto Snow API', 
     status: 'running',
-    timestamp: new Date().toISOString() 
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    pid: process.pid
   });
 });
 
@@ -200,13 +208,26 @@ server.on('error', (err) => {
   process.exit(1);
 });
 
-// Handle process errors
+// Handle process errors - log but don't exit immediately in production
+// Railway will restart on failure, but we want to log errors first
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
-  process.exit(1);
+  console.error('❌ Uncaught Exception:', err);
+  console.error('Stack:', err.stack);
+  // Give Railway time to see the error before exiting
+  setTimeout(() => {
+    console.error('Exiting due to uncaught exception');
+    process.exit(1);
+  }, 5000);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error('❌ Unhandled Rejection at:', promise);
+  console.error('Reason:', reason);
+  // Log but don't exit - many unhandled rejections are non-fatal
+  // Only exit if it's a critical error
+  if (reason && reason.code === 'ECONNREFUSED') {
+    console.error('Database connection refused - this is critical');
+    setTimeout(() => process.exit(1), 5000);
+  }
 });
 
