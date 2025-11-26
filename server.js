@@ -32,17 +32,30 @@ const PORT = process.env.PORT || 3000;
 // Trust proxy to get real IP addresses (important for IP tracking)
 app.set('trust proxy', true);
 
-// Middleware
+// Middleware - CORS configuration
 app.use(cors({
-  origin: [
-    'https://crypto-snow.netlify.app',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    /\.netlify\.app$/, // Allow all Netlify preview deployments
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'https://crypto-snow.netlify.app',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+    ];
+    
+    // Check if origin is in allowed list or is a Netlify domain
+    if (allowedOrigins.includes(origin) || /\.netlify\.app$/.test(origin)) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Type'],
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
