@@ -56,7 +56,10 @@ const screens = {
 };
 
 // API base URL
-const API_BASE = window.location.origin;
+// Use Railway backend URL in production, or localhost for development
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : 'https://perpetual-reprieve-try3.up.railway.app';
 
 /**
  * Initialize the application
