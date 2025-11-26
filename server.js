@@ -104,6 +104,11 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
 
+// Root path for Railway health checks
+app.get('/', (req, res) => {
+  res.json({ ok: true, service: 'Crypto Snow API', timestamp: new Date().toISOString() });
+});
+
 // Route test endpoint (for debugging)
 app.get('/api/test-routes', (req, res) => {
   res.json({
