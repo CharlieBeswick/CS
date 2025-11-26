@@ -974,7 +974,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
   position: relative;
 }
@@ -986,6 +986,10 @@ body {
 .redemption-wallet-card:hover .premium-ticket-icon {
   transform: scale(1.05);
   filter: brightness(1.15);
+}
+
+.redemption-wallet-card .ticket-with-label {
+  gap: 3px;
 }
 
 .redemption-wallet-card-selected {
@@ -3114,7 +3118,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   position: relative;
 }
 
@@ -3125,6 +3129,10 @@ body {
 .wallet-tier-card:hover .premium-ticket-icon {
   transform: scale(1.05);
   filter: brightness(1.15);
+}
+
+.wallet-tier-card .ticket-with-label {
+  gap: 3px;
 }
 
 .wallet-tier-name {
@@ -3343,6 +3351,28 @@ body {
   filter: brightness(1.1);
 }
 
+/* Ticket with label wrapper */
+.ticket-with-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.ticket-label-below {
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 4px currentColor, 0 0 2px currentColor;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
 /* Pulse glow animation for ticket borders */
 @keyframes pulseGlow {
   0%, 100% {
@@ -3373,7 +3403,7 @@ body {
 
 .ticket-count-badge {
   position: absolute;
-  bottom: -8px;
+  top: -8px;
   right: -8px;
   background: rgba(0, 0, 0, 0.85);
   color: #fff;
@@ -3386,11 +3416,6 @@ body {
   text-align: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   z-index: 10;
-}
-
-.ticket-tier-label {
-  pointer-events: none;
-  user-select: none;
 }
 
 /* Legacy ticket pill styles (kept for backward compatibility, but not used) */
@@ -3440,8 +3465,12 @@ body {
   .ticket-count-badge {
     font-size: 0.6rem;
     padding: 1px 4px;
-    bottom: -6px;
+    top: -6px;
     right: -6px;
+  }
+  
+  .ticket-label-below {
+    font-size: 0.55rem;
   }
 }
 

@@ -66,19 +66,26 @@ const TIER_CONFIG = {
   }
 };
 
-// Size presets
+// Size presets (reduced by 8x, icons stay same size)
 const SIZE_PRESETS = {
-  sm: { width: 120, height: 80 },
-  md: { width: 200, height: 133 },
-  lg: { width: 280, height: 187 }
+  sm: { width: 15, height: 10 },
+  md: { width: 25, height: 17 },
+  lg: { width: 35, height: 23 }
+};
+
+// Icon sizes (kept at original size)
+const ICON_SIZES = {
+  sm: 30,
+  md: 40,
+  lg: 50
 };
 
 /**
  * Generate ticket stub SVG path
  * Creates a horizontal ticket with rounded corners and side notches
  */
-function generateTicketPath(width, height, notchRadius = 8) {
-  const radius = 14;
+function generateTicketPath(width, height, notchRadius = 1.5) {
+  const radius = 2;
   const notchY = height / 2;
   
   // Build the path: start from top-left, go clockwise
@@ -235,8 +242,8 @@ function generateGemIcon(color, size = 40) {
  * Main function to generate premium ticket icon
  * @param {string} tier - Tier name (BRONZE, SILVER, etc.)
  * @param {string} size - Size preset: 'sm', 'md', or 'lg'
- * @param {boolean} showLabel - Whether to show tier label (default: true)
- * @returns {string} HTML string with SVG ticket icon
+ * @param {boolean} showLabel - Whether to show tier label (default: true) - NOTE: label is now rendered outside SVG
+ * @returns {string} HTML string with SVG ticket icon (label is separate)
  */
 function createTicketIcon(tier, size = 'md', showLabel = true) {
   const config = TIER_CONFIG[tier.toUpperCase()];
@@ -246,17 +253,26 @@ function createTicketIcon(tier, size = 'md', showLabel = true) {
   }
   
   const dimensions = SIZE_PRESETS[size] || SIZE_PRESETS.md;
-  const width = dimensions.width;
-  const height = dimensions.height;
-  const viewBox = `0 0 ${width} ${height}`;
+  const ticketWidth = dimensions.width;
+  const ticketHeight = dimensions.height;
   
-  const ticketPath = generateTicketPath(width, height);
-  const iconSize = Math.min(width, height) * 0.25;
-  const iconX = width / 2;
-  const iconY = height / 2 - (showLabel ? 8 : 0);
-  const labelY = height / 2 + iconSize / 2 + 12;
+  // Icon size is independent of ticket size (kept at original size)
+  const iconSize = ICON_SIZES[size] || ICON_SIZES.md;
   
-  // Generate centerpiece icon
+  // ViewBox needs to be large enough to fit the icon (which is larger than the ticket)
+  const viewBoxWidth = Math.max(ticketWidth, iconSize + 4);
+  const viewBoxHeight = Math.max(ticketHeight, iconSize + 4);
+  const viewBox = `0 0 ${viewBoxWidth} ${viewBoxHeight}`;
+  
+  const ticketPath = generateTicketPath(ticketWidth, ticketHeight);
+  
+  // Center ticket and icon in viewBox
+  const ticketX = (viewBoxWidth - ticketWidth) / 2;
+  const ticketY = (viewBoxHeight - ticketHeight) / 2;
+  const iconX = viewBoxWidth / 2;
+  const iconY = viewBoxHeight / 2;
+  
+  // Generate centerpiece icon (centered in viewBox, overlapping ticket)
   let centerpieceIcon = '';
   if (config.iconType === 'coin') {
     centerpieceIcon = `<g transform="translate(${iconX - iconSize/2}, ${iconY - iconSize/2})">${generateCoinIcon(config.iconLetter, config.iconColor, iconSize)}</g>`;
@@ -271,9 +287,11 @@ function createTicketIcon(tier, size = 'md', showLabel = true) {
     <svg 
       class="premium-ticket-icon premium-ticket-${tier.toLowerCase()}" 
       viewBox="${viewBox}" 
-      width="${width}" 
-      height="${height}"
+      width="${ticketWidth}" 
+      height="${ticketHeight}"
       xmlns="http://www.w3.org/2000/svg"
+      data-tier="${tier.toUpperCase()}"
+      style="overflow: visible;"
     >
       <defs>
         <!-- Background gradient -->
@@ -290,17 +308,8 @@ function createTicketIcon(tier, size = 'md', showLabel = true) {
         </pattern>
         
         <!-- Glow filter for border with pulse animation support -->
-        <filter id="glow-${ticketId}" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-        
-        <!-- Text glow filter -->
-        <filter id="textGlow-${ticketId}" x="-100%" y="-100%" width="300%" height="300%">
-          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+        <filter id="glow-${ticketId}" x="-200%" y="-200%" width="500%" height="500%">
+          <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
           <feMerge>
             <feMergeNode in="coloredBlur"/>
             <feMergeNode in="SourceGraphic"/>
@@ -308,62 +317,77 @@ function createTicketIcon(tier, size = 'md', showLabel = true) {
         </filter>
       </defs>
       
-      <!-- Layer 1: Background with gradient and texture -->
-      <path 
-        d="${ticketPath}" 
-        fill="url(#gradient-${ticketId})"
-      />
-      <path 
-        d="${ticketPath}" 
-        fill="url(#noise-${ticketId})"
-        opacity="0.3"
-      />
+      <!-- Layer 1: Background with gradient and texture (centered) -->
+      <g transform="translate(${ticketX}, ${ticketY})">
+        <path 
+          d="${ticketPath}" 
+          fill="url(#gradient-${ticketId})"
+        />
+        <path 
+          d="${ticketPath}" 
+          fill="url(#noise-${ticketId})"
+          opacity="0.3"
+        />
+        
+        <!-- Layer 2: Glowing border (with pulse animation class) -->
+        <path 
+          class="ticket-border-glow"
+          d="${ticketPath}" 
+          fill="none" 
+          stroke="${config.borderColor}" 
+          stroke-width="0.4" 
+          stroke-linejoin="round"
+          filter="url(#glow-${ticketId})"
+          opacity="0.8"
+        />
+        
+        <!-- Inner border for depth -->
+        <path 
+          d="${ticketPath}" 
+          fill="none" 
+          stroke="rgba(255,255,255,0.2)" 
+          stroke-width="0.1" 
+          stroke-linejoin="round"
+        />
+      </g>
       
-      <!-- Layer 2: Glowing border (with pulse animation class) -->
-      <path 
-        class="ticket-border-glow"
-        d="${ticketPath}" 
-        fill="none" 
-        stroke="${config.borderColor}" 
-        stroke-width="5" 
-        stroke-linejoin="round"
-        filter="url(#glow-${ticketId})"
-        opacity="0.8"
-      />
-      
-      <!-- Inner border for depth -->
-      <path 
-        d="${ticketPath}" 
-        fill="none" 
-        stroke="rgba(255,255,255,0.2)" 
-        stroke-width="1" 
-        stroke-linejoin="round"
-      />
-      
-      <!-- Layer 3: Centerpiece icon -->
+      <!-- Layer 3: Centerpiece icon (larger relative to ticket) -->
       ${centerpieceIcon}
-      
-      <!-- Layer 4: Tier label -->
-      ${showLabel ? `
-        <text 
-          x="${width / 2}" 
-          y="${labelY}" 
-          text-anchor="middle" 
-          dominant-baseline="central" 
-          class="ticket-tier-label"
-          fill="${config.borderColor}"
-          font-family="Arial, sans-serif"
-          font-weight="bold"
-          font-size="${Math.max(10, width * 0.06)}"
-          filter="url(#textGlow-${ticketId})"
-        >${config.name}</text>
-      ` : ''}
     </svg>
+  `;
+}
+
+/**
+ * Create ticket icon with label below (wrapper function)
+ * @param {string} tier - Tier name (BRONZE, SILVER, etc.)
+ * @param {string} size - Size preset: 'sm', 'md', or 'lg'
+ * @param {boolean} showLabel - Whether to show tier label below (default: true)
+ * @returns {string} HTML string with SVG ticket icon and label wrapper
+ */
+function createTicketIconWithLabel(tier, size = 'md', showLabel = true) {
+  const config = TIER_CONFIG[tier.toUpperCase()];
+  if (!config) {
+    console.error(`Unknown tier: ${tier}`);
+    return '';
+  }
+  
+  const ticketIcon = createTicketIcon(tier, size, false); // Always false for label inside SVG
+  
+  if (!showLabel) {
+    return ticketIcon;
+  }
+  
+  // Wrap ticket with label below
+  return `
+    <div class="ticket-with-label">
+      ${ticketIcon}
+      <span class="ticket-label-below" style="color: ${config.borderColor};">${config.name}</span>
+    </div>
   `;
 }
 
 // Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { createTicketIcon, TIER_CONFIG, SIZE_PRESETS };
+  module.exports = { createTicketIcon, createTicketIconWithLabel, TIER_CONFIG, SIZE_PRESETS, ICON_SIZES };
 }
 

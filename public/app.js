@@ -923,8 +923,8 @@ function renderWalletGrid() {
     const card = document.createElement('div');
     card.className = 'wallet-tier-card';
 
-    // Create premium ticket icon
-    const ticketIcon = createTicketIcon(tier, 'md', true);
+    // Create premium ticket icon with label below
+    const ticketIcon = createTicketIconWithLabel(tier, 'md', true);
     
     // Add count display
     const countDisplay = document.createElement('div');
@@ -1217,6 +1217,7 @@ async function loadWalletSummary() {
       if (retryData.ok && retryData.wallet) {
         appState.wallet = retryData.wallet;
         renderWalletSummary();
+        renderTierGameButtons(); // Re-render tier buttons when wallet loads
         return;
       }
     }
@@ -1226,6 +1227,7 @@ async function loadWalletSummary() {
     if (data.ok && data.wallet) {
       appState.wallet = data.wallet;
       renderWalletSummary();
+      renderTierGameButtons(); // Re-render tier buttons when wallet loads
     } else {
       throw new Error('Failed to load wallet');
     }
@@ -1236,6 +1238,7 @@ async function loadWalletSummary() {
     }
     // Graceful degradation: show "—" for all tiers
     renderWalletSummary(true);
+    renderTierGameButtons(); // Re-render tier buttons when wallet loads
   }
 }
 
@@ -1257,8 +1260,8 @@ function renderWalletSummary(showPlaceholder = false) {
     ticketWrapper.className = 'ticket-icon-wrapper';
     ticketWrapper.setAttribute('data-tier', tier);
 
-    // Create premium ticket icon
-    const ticketIcon = createTicketIcon(tier, 'sm', true);
+    // Create premium ticket icon with label below
+    const ticketIcon = createTicketIconWithLabel(tier, 'sm', true);
     ticketWrapper.innerHTML = ticketIcon;
 
     // Add count badge
@@ -1321,6 +1324,7 @@ function renderTierLadder() {
 /**
  * Render tier game buttons (Tier 1-7)
  * Note: Tier 8 (Diamond) is the final tier - no games beyond it
+ * Only shows buttons for tiers the player has tickets for
  */
 function renderTierGameButtons() {
   const buttonsContainer = document.getElementById('tierGameButtons');
@@ -1339,16 +1343,36 @@ function renderTierGameButtons() {
 
   buttonsContainer.innerHTML = '';
 
+  // Get wallet balances
+  const wallet = appState.wallet || {};
+  
   // Tier 1-7 buttons (Tier 8/Diamond is the final tier, no games beyond it)
   for (let tierNum = 1; tierNum <= 7; tierNum++) {
     const metadata = tierMetadata[tierNum];
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'tier-game-btn';
-    button.textContent = `Enter Tier ${tierNum} Game (${metadata.from} → ${metadata.to})`;
-    button.dataset.tier = tierNum;
-    button.addEventListener('click', () => handleTierGameClick(tierNum));
-    buttonsContainer.appendChild(button);
+    const requiredTier = metadata.tier;
+    const ticketBalance = wallet[requiredTier] || 0;
+    
+    // Only show button if player has tickets for this tier
+    if (ticketBalance > 0) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'tier-game-btn';
+      button.textContent = `Enter Tier ${tierNum} Game (${metadata.from} → ${metadata.to})`;
+      button.dataset.tier = tierNum;
+      button.addEventListener('click', () => handleTierGameClick(tierNum));
+      buttonsContainer.appendChild(button);
+    }
+  }
+  
+  // Show message if no buttons are available
+  if (buttonsContainer.children.length === 0) {
+    const message = document.createElement('p');
+    message.className = 'tier-games-empty';
+    message.textContent = 'You need tickets to enter tier games. Watch ads or play free games to earn Bronze tickets!';
+    message.style.textAlign = 'center';
+    message.style.color = 'var(--muted)';
+    message.style.padding = '1rem';
+    buttonsContainer.appendChild(message);
   }
 }
 
@@ -3110,8 +3134,8 @@ function renderRedemptionWallet() {
     }
     card.setAttribute('data-tier', tier);
 
-    // Create premium ticket icon
-    const ticketIcon = createTicketIcon(tier, 'md', true);
+    // Create premium ticket icon with label below
+    const ticketIcon = createTicketIconWithLabel(tier, 'md', true);
     
     // Add count display
     const countDisplay = document.createElement('div');
@@ -3173,8 +3197,8 @@ async function renderRedemptionTicketType(tier, tierName) {
     console.error('Error fetching crypto prices:', error);
   }
 
-  // Create premium ticket icon
-  const ticketIcon = createTicketIcon(tier, 'lg', true);
+  // Create premium ticket icon with label below
+  const ticketIcon = createTicketIconWithLabel(tier, 'lg', true);
   
   container.innerHTML = `
     <div class="redemption-ticket-card">
