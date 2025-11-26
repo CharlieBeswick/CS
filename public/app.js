@@ -913,35 +913,27 @@ function renderWalletGrid() {
   const walletGrid = document.getElementById('walletGrid');
   if (!walletGrid || !appState.wallet) return;
 
-  // Tier metadata (matching config/tickets.js)
-  const tierMetadata = {
-    BRONZE: { name: 'Bronze', color: '#CD7F32' },
-    SILVER: { name: 'Silver', color: '#C0C0C0' },
-    GOLD: { name: 'Gold', color: '#FFD700' },
-    EMERALD: { name: 'Emerald', color: '#50C878' },
-    SAPPHIRE: { name: 'Sapphire', color: '#0F52BA' },
-    RUBY: { name: 'Ruby', color: '#E0115F' },
-    AMETHYST: { name: 'Amethyst', color: '#9966CC' },
-    DIAMOND: { name: 'Diamond', color: '#B9F2FF' },
-  };
-
   const tiers = ['BRONZE', 'SILVER', 'GOLD', 'EMERALD', 'SAPPHIRE', 'RUBY', 'AMETHYST', 'DIAMOND'];
 
   walletGrid.innerHTML = '';
 
   tiers.forEach(tier => {
-    const metadata = tierMetadata[tier];
     const balance = appState.wallet[tier] || 0;
 
     const card = document.createElement('div');
     card.className = 'wallet-tier-card';
-    card.style.borderColor = metadata.color;
-    card.style.backgroundColor = `${metadata.color}15`; // 15 = ~8% opacity
 
-    card.innerHTML = `
-      <div class="wallet-tier-name" style="color: ${metadata.color}">${metadata.name}</div>
-      <div class="wallet-tier-balance">${balance}</div>
-    `;
+    // Create premium ticket icon
+    const ticketIcon = createTicketIcon(tier, 'md', true);
+    
+    // Add count display
+    const countDisplay = document.createElement('div');
+    countDisplay.className = 'wallet-tier-balance';
+    countDisplay.textContent = balance;
+
+    card.innerHTML = ticketIcon;
+    card.appendChild(countDisplay);
+    card.setAttribute('data-tier', tier);
 
     walletGrid.appendChild(card);
   });
@@ -1254,38 +1246,28 @@ function renderWalletSummary(showPlaceholder = false) {
   const stripContainer = document.getElementById('ticketStrip');
   if (!stripContainer) return;
 
-  // Tier metadata (matching config/tickets.js)
-  const tierMetadata = {
-    BRONZE: { name: 'BRONZE', color: '#CD7F32' },
-    SILVER: { name: 'SILVER', color: '#C0C0C0' },
-    GOLD: { name: 'GOLD', color: '#FFD700' },
-    EMERALD: { name: 'EMERALD', color: '#50C878' },
-    SAPPHIRE: { name: 'SAPPHIRE', color: '#0F52BA' },
-    RUBY: { name: 'RUBY', color: '#E0115F' },
-    AMETHYST: { name: 'AMETHYST', color: '#9966CC' },
-    DIAMOND: { name: 'DIAMOND', color: '#B9F2FF' },
-  };
-
   const tiers = ['BRONZE', 'SILVER', 'GOLD', 'EMERALD', 'SAPPHIRE', 'RUBY', 'AMETHYST', 'DIAMOND'];
 
   stripContainer.innerHTML = '';
 
   tiers.forEach(tier => {
-    const metadata = tierMetadata[tier];
     const balance = showPlaceholder ? '—' : (appState.wallet?.[tier] || 0);
 
-    const pill = document.createElement('div');
-    pill.className = 'ticket-pill';
-    pill.style.borderColor = metadata.color;
-    pill.style.color = metadata.color;
-    pill.setAttribute('data-tier', tier);
+    const ticketWrapper = document.createElement('div');
+    ticketWrapper.className = 'ticket-icon-wrapper';
+    ticketWrapper.setAttribute('data-tier', tier);
 
-    pill.innerHTML = `
-      <span class="ticket-pill-name">${metadata.name}</span>
-      <span class="ticket-pill-count">${balance}</span>
-    `;
+    // Create premium ticket icon
+    const ticketIcon = createTicketIcon(tier, 'sm', true);
+    ticketWrapper.innerHTML = ticketIcon;
 
-    stripContainer.appendChild(pill);
+    // Add count badge
+    const countBadge = document.createElement('span');
+    countBadge.className = 'ticket-count-badge';
+    countBadge.textContent = balance;
+    ticketWrapper.appendChild(countBadge);
+
+    stripContainer.appendChild(ticketWrapper);
   });
 
   const bronzeBalanceEl = document.getElementById('bronzeTicketBalance');
@@ -3114,23 +3096,11 @@ function renderRedemptionWallet() {
   const container = document.getElementById('redemptionWalletGrid');
   if (!container || !appState.wallet) return;
 
-  const tierMetadata = {
-    BRONZE: { name: 'Bronze', color: '#CD7F32' },
-    SILVER: { name: 'Silver', color: '#C0C0C0' },
-    GOLD: { name: 'Gold', color: '#FFD700' },
-    EMERALD: { name: 'Emerald', color: '#50C878' },
-    SAPPHIRE: { name: 'Sapphire', color: '#0F52BA' },
-    RUBY: { name: 'Ruby', color: '#E0115F' },
-    AMETHYST: { name: 'Amethyst', color: '#9966CC' },
-    DIAMOND: { name: 'Diamond', color: '#B9F2FF' },
-  };
-
   const tiers = ['BRONZE', 'SILVER', 'GOLD', 'EMERALD', 'SAPPHIRE', 'RUBY', 'AMETHYST', 'DIAMOND'];
 
   container.innerHTML = '';
 
   tiers.forEach(tier => {
-    const metadata = tierMetadata[tier];
     const balance = appState.wallet[tier] || 0;
 
     const card = document.createElement('div');
@@ -3138,12 +3108,18 @@ function renderRedemptionWallet() {
     if (tier === appState.redemptionTier) {
       card.classList.add('redemption-wallet-card-selected');
     }
-    card.style.borderColor = metadata.color;
+    card.setAttribute('data-tier', tier);
 
-    card.innerHTML = `
-      <div class="redemption-wallet-tier-name" style="color: ${metadata.color}">${metadata.name}</div>
-      <div class="redemption-wallet-tier-balance">${balance}</div>
-    `;
+    // Create premium ticket icon
+    const ticketIcon = createTicketIcon(tier, 'md', true);
+    
+    // Add count display
+    const countDisplay = document.createElement('div');
+    countDisplay.className = 'redemption-wallet-tier-balance';
+    countDisplay.textContent = balance;
+
+    card.innerHTML = ticketIcon;
+    card.appendChild(countDisplay);
 
     container.appendChild(card);
   });
@@ -3197,9 +3173,14 @@ async function renderRedemptionTicketType(tier, tierName) {
     console.error('Error fetching crypto prices:', error);
   }
 
+  // Create premium ticket icon
+  const ticketIcon = createTicketIcon(tier, 'lg', true);
+  
   container.innerHTML = `
-    <div class="redemption-ticket-card" style="border-color: ${metadata.color}">
-      <div class="redemption-ticket-name" style="color: ${metadata.color}">${metadata.name}</div>
+    <div class="redemption-ticket-card">
+      <div class="redemption-ticket-icon-wrapper">
+        ${ticketIcon}
+      </div>
       <div class="redemption-ticket-balance">Available: ${balance}</div>
       <div class="redemption-ticket-value">
         <div class="redemption-value-usd">Prize Value: $${ticketValueUsd.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
