@@ -622,6 +622,10 @@ async function handleEmailLogin(event) {
     const data = await res.json();
 
     if (data.ok) {
+      // Wait a moment for the session cookie to be set by the browser
+      await new Promise(resolve => setTimeout(resolve, 100));
+      // Verify session is working before proceeding
+      await checkAuth();
       setCurrentUser(data.user);
     } else {
       throw new Error(data.error || 'Login failed');
@@ -666,6 +670,10 @@ async function handleEmailRegister(event) {
     const data = await res.json();
 
     if (data.ok) {
+      // Wait a moment for the session cookie to be set by the browser
+      await new Promise(resolve => setTimeout(resolve, 100));
+      // Verify session is working before proceeding
+      await checkAuth();
       setCurrentUser(data.user);
     } else {
       throw new Error(data.error || 'Registration failed');
@@ -727,8 +735,11 @@ function setCurrentUser(user) {
   }
 
   // Load wallet and free attempts status when user is set
-  loadWallet();
-  loadFreeAttemptsStatus();
+  // Add a small delay to ensure session cookie is processed
+  setTimeout(() => {
+    loadWallet();
+    loadFreeAttemptsStatus();
+  }, 200);
 
   // Update balance UI (legacy - deprecated)
   updateTicketsBalanceUI();
@@ -1186,6 +1197,21 @@ async function loadWalletSummary() {
     const res = await fetch(`${API_BASE}/api/wallet`, {
       credentials: 'include',
     });
+    
+    // If we get 401, the session might not be ready yet - retry once
+    if (res.status === 401) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const retryRes = await fetch(`${API_BASE}/api/wallet`, {
+        credentials: 'include',
+      });
+      const retryData = await retryRes.json();
+      if (retryData.ok && retryData.wallet) {
+        appState.wallet = retryData.wallet;
+        renderWalletSummary();
+        return;
+      }
+    }
+    
     const data = await res.json();
 
     if (data.ok && data.wallet) {
@@ -1195,7 +1221,10 @@ async function loadWalletSummary() {
       throw new Error('Failed to load wallet');
     }
   } catch (error) {
-    console.warn('Failed to load wallet summary:', error);
+    // Only log if it's not a 401 (session not ready yet)
+    if (!error.message.includes('401') && !error.message.includes('Unauthorized')) {
+      console.warn('Failed to load wallet summary:', error);
+    }
     // Graceful degradation: show "—" for all tiers
     renderWalletSummary(true);
   }
@@ -2782,7 +2811,10 @@ function showScreen(screenName) {
     }
   } else if (screenName === 'lobby' && screens.lobby) {
     screens.lobby.style.display = 'block';
-    loadLobbyContent(); // Load wallet summary and render tier buttons
+    // Add small delay to ensure session is ready after login
+    setTimeout(() => {
+      loadLobbyContent(); // Load wallet summary and render tier buttons
+    }, 300);
   } else if (screenName === 'bronzeLobby' && screens.bronzeLobby) {
     screens.bronzeLobby.style.display = 'block';
     // Load wallet and start lobby polling
