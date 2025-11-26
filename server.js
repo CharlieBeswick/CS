@@ -99,14 +99,19 @@ app.get('/admin/debug-session', (req, res) => {
   });
 });
 
-// Health check
+// Health check - must respond quickly for Railway
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, timestamp: new Date().toISOString() });
+  res.status(200).json({ ok: true, timestamp: new Date().toISOString() });
 });
 
-// Root path for Railway health checks
+// Root path for Railway health checks - respond immediately
 app.get('/', (req, res) => {
-  res.json({ ok: true, service: 'Crypto Snow API', timestamp: new Date().toISOString() });
+  res.status(200).json({ 
+    ok: true, 
+    service: 'Crypto Snow API', 
+    status: 'running',
+    timestamp: new Date().toISOString() 
+  });
 });
 
 // Route test endpoint (for debugging)
@@ -141,8 +146,10 @@ app.use((err, req, res, next) => {
 // Start server first (don't block on lobby initialization)
 // Listen on 0.0.0.0 to accept connections from Railway's proxy
 const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Crypto Tickets server running on http://0.0.0.0:${PORT}`);
-  console.log(`Server is listening and ready to accept connections`);
+  console.log(`✅ Crypto Tickets server running on http://0.0.0.0:${PORT}`);
+  console.log(`✅ Server is listening and ready to accept connections`);
+  console.log(`✅ Health check available at http://0.0.0.0:${PORT}/api/health`);
+  console.log(`✅ Root endpoint available at http://0.0.0.0:${PORT}/`);
   console.log(`Make sure to configure Google OAuth credentials in config/google.json`);
   console.log(`Or set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables`);
   
