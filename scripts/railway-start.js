@@ -24,12 +24,8 @@ if (!process.env.DATABASE_URL) {
   }
 }
 
-// Start the server
+// Start the server directly by requiring it
+// This keeps the process alive since server.js starts the Express server
 console.log('🌐 Starting server...');
-try {
-  execSync('npm start', { stdio: 'inherit' });
-} catch (error) {
-  console.error('❌ Server failed to start:', error.message);
-  process.exit(1);
-}
+require('../server.js');
 
