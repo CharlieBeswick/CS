@@ -438,7 +438,7 @@ function initializeGoogleSignIn() {
   
   try {
     google.accounts.id.initialize({
-      client_id: '471918731686-nfqn8b6rvbj2rm7j0e7uksmh24n6bfkj.apps.googleusercontent.com',
+      client_id: '471918731686-11a6qm3hlqgablic5ks7u24ob5ghd800.apps.googleusercontent.com',
       callback: handleGoogleSignIn,
     });
     
@@ -552,7 +552,7 @@ async function handleGoogleSignInWithToken(accessToken) {
     if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
       // Try to get ID token instead
       google.accounts.id.initialize({
-        client_id: '471918731686-nfqn8b6rvbj2rm7j0e7uksmh24n6bfkj.apps.googleusercontent.com',
+        client_id: '471918731686-11a6qm3hlqgablic5ks7u24ob5ghd800.apps.googleusercontent.com',
         callback: handleGoogleSignIn,
       });
       google.accounts.id.prompt();
