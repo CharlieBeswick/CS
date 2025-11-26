@@ -2084,8 +2084,10 @@ function startSynchronizedWheelAnimation(wheelGraphic, finalRotation, winningNum
   const START_ROTATION = 0;
   const TARGET_ROTATION = finalRotation;
   
-  // Add multiple full rotations for visual effect (5-10 full spins)
-  const EXTRA_ROTATIONS = 5 + (Math.random() * 5); // 5-10 extra rotations
+  // Add multiple full rotations for visual effect
+  // Use a deterministic calculation based on target rotation to ensure all clients use the same value
+  // This ensures synchronized animation across all clients
+  const EXTRA_ROTATIONS = 5 + ((TARGET_ROTATION % 5)); // 5-9.99 extra rotations (deterministic)
   const TOTAL_ROTATION = (EXTRA_ROTATIONS * 360) + TARGET_ROTATION;
   
   // Initialize state
