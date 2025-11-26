@@ -34,8 +34,15 @@ app.set('trust proxy', true);
 
 // Middleware
 app.use(cors({
-  origin: true, // Allow all origins in dev (restrict in production)
+  origin: [
+    'https://crypto-snow.netlify.app',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    /\.netlify\.app$/, // Allow all Netlify preview deployments
+  ],
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
