@@ -42,6 +42,8 @@ const corsOptions = {
       'https://crypto-snow.netlify.app',
       'http://localhost:3000',
       'http://127.0.0.1:3000',
+      'https://cryptosnow.app',
+      'https://www.cryptosnow.app',
     ];
     
     // Check if origin is in allowed list or is a Netlify domain
