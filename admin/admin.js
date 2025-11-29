@@ -30,14 +30,27 @@ async function init() {
  */
 async function checkAdminAccess() {
   try {
+    console.log('[Admin] Checking admin access, API_BASE:', API_BASE);
     const response = await fetch(`${API_BASE}/auth/me`, {
       credentials: 'include',
     });
     
+    console.log('[Admin] Auth check response status:', response.status);
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        showNoAdminAccess('Not authenticated. Please sign in on the main app (cryptosnow.app) first, then try accessing the admin panel again.');
+      } else {
+        showNoAdminAccess(`Authentication error (${response.status}). Please try again.`);
+      }
+      return false;
+    }
+    
     const data = await response.json();
+    console.log('[Admin] Auth check data:', data);
     
     if (!data.ok || !data.user) {
-      showNoAdminAccess('Not authenticated. Please sign in first.');
+      showNoAdminAccess('Not authenticated. Please sign in on the main app (cryptosnow.app) first, then try accessing the admin panel again.');
       return false;
     }
     
@@ -51,16 +64,18 @@ async function checkAdminAccess() {
     
     // Check if user has admin role
     if (!data.user.role || data.user.role !== 'ADMIN') {
-      showNoAdminAccess(`You are signed in as ${data.user.email}, but do not have admin rights for Crypto Snow.`);
+      console.warn('[Admin] User does not have ADMIN role:', { email: data.user.email, role: data.user.role });
+      showNoAdminAccess(`You are signed in as ${data.user.email}, but your account does not have admin rights. Your current role is: ${data.user.role || 'none'}. Please contact the system administrator.`);
       return false;
     }
     
+    console.log('[Admin] Admin access granted for:', data.user.email);
     // User has ADMIN role, allow access
     // Note: The backend route also checks admin access, so this is just a frontend check
     return true;
   } catch (error) {
-    console.error('Admin access check error:', error);
-    showNoAdminAccess('Error checking admin access.');
+    console.error('[Admin] Admin access check error:', error);
+    showNoAdminAccess(`Error checking admin access: ${error.message}. Make sure you are signed in on the main app first.`);
     return false;
   }
 }
@@ -76,7 +91,16 @@ function showNoAdminAccess(message) {
   if (container) container.style.display = 'none';
   if (noAccess) {
     noAccess.style.display = 'flex';
-    if (messageEl) messageEl.textContent = message;
+    if (messageEl) {
+      messageEl.textContent = message;
+      // Add helpful message about signing in
+      const helpText = document.createElement('p');
+      helpText.style.marginTop = '1rem';
+      helpText.style.color = 'var(--admin-text-muted)';
+      helpText.style.fontSize = '0.9rem';
+      helpText.textContent = 'Tip: Make sure you are signed in on the main app (cryptosnow.app) first, then access the admin panel.';
+      messageEl.parentElement.appendChild(helpText);
+    }
   }
 }
 

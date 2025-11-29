@@ -138,8 +138,10 @@ app.use('/api/admin', adminRoutes); // Admin routes: /api/admin/tombolas
 app.use('/api/lobbies', lobbyRoutes);
 app.use('/api/history', historyRoutes);
 
-// Admin app - serve HTML (requires admin access) - must come before catch-all route
-app.get('/admin', requireAuth, requireAdmin, (req, res) => {
+// Admin app - serve HTML (auth check happens in admin.js client-side)
+// This allows the HTML to load even if cookies aren't sent (e.g., from Netlify redirect)
+// The admin.js will check auth and show appropriate message if not authenticated
+app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin', 'index.html'));
 });
 
