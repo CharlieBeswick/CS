@@ -13,6 +13,14 @@ if (!process.env.DATABASE_URL) {
   console.warn('⚠️  DATABASE_URL not set - skipping migrations');
   console.log('⚠️  Server will start but database features may not work');
 } else {
+  // First, try to fix any failed migration state (from SQLite to PostgreSQL switch)
+  try {
+    console.log('🔧 Checking migration state...');
+    require('./fix-migration-state.js');
+  } catch (error) {
+    console.log('ℹ️  Migration state check skipped:', error.message);
+  }
+  
   // Try to run migrations
   console.log('📦 Running database migrations...');
   try {
