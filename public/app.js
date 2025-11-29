@@ -752,11 +752,12 @@ function setCurrentUser(user) {
   }
 
   // Load wallet and free attempts status when user is set
-  // Add a small delay to ensure session cookie is processed
+  // Add a delay to ensure session cookie is processed (especially important for iOS Safari)
+  // iOS Safari can be slow to process cross-origin cookies
   setTimeout(() => {
-  loadWallet();
-  loadFreeAttemptsStatus();
-  }, 200);
+    loadWallet();
+    loadFreeAttemptsStatus();
+  }, 500); // Increased delay for iOS Safari cookie processing
 
   // Update balance UI (legacy - deprecated)
   updateTicketsBalanceUI();
@@ -886,13 +887,29 @@ function loadTicketsScreen() {
 /**
  * Load wallet from API and update state
  */
-async function loadWallet() {
+async function loadWallet(retryCount = 0) {
   if (!appState.currentUser) return;
 
   try {
     const res = await fetch(`${API_BASE}/api/wallet`, {
       credentials: 'include',
     });
+    
+    // Handle 401 (unauthorized) - session cookie might not be set yet (iOS Safari issue)
+    if (res.status === 401) {
+      if (retryCount < 3) {
+        console.log(`Wallet load failed (401), retrying in ${(retryCount + 1) * 500}ms... (attempt ${retryCount + 1}/3)`);
+        await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 500));
+        return loadWallet(retryCount + 1);
+      } else {
+        console.error('Failed to load wallet after 3 retries - session cookie may not be set');
+        // Initialize empty wallet so UI shows 0 instead of "—"
+        appState.wallet = { BRONZE: 0, SILVER: 0, GOLD: 0, EMERALD: 0, SAPPHIRE: 0, RUBY: 0, AMETHYST: 0, DIAMOND: 0 };
+        renderWalletGrid();
+        return;
+      }
+    }
+    
     const data = await res.json();
 
     if (data.ok && data.wallet) {
@@ -900,9 +917,15 @@ async function loadWallet() {
       renderWalletGrid();
     } else {
       console.error('Failed to load wallet:', data.error);
+      // Initialize empty wallet on error
+      appState.wallet = { BRONZE: 0, SILVER: 0, GOLD: 0, EMERALD: 0, SAPPHIRE: 0, RUBY: 0, AMETHYST: 0, DIAMOND: 0 };
+      renderWalletGrid();
     }
   } catch (error) {
     console.error('Error loading wallet:', error);
+    // Initialize empty wallet on error
+    appState.wallet = { BRONZE: 0, SILVER: 0, GOLD: 0, EMERALD: 0, SAPPHIRE: 0, RUBY: 0, AMETHYST: 0, DIAMOND: 0 };
+    renderWalletGrid();
   }
 }
 
@@ -942,13 +965,29 @@ function renderWalletGrid() {
 /**
  * Load free attempts status from API
  */
-async function loadFreeAttemptsStatus() {
+async function loadFreeAttemptsStatus(retryCount = 0) {
   if (!appState.currentUser) return;
 
   try {
     const res = await fetch(`${API_BASE}/api/free-attempts/status`, {
       credentials: 'include',
     });
+    
+    // Handle 401 (unauthorized) - session cookie might not be set yet (iOS Safari issue)
+    if (res.status === 401) {
+      if (retryCount < 3) {
+        console.log(`Free attempts load failed (401), retrying in ${(retryCount + 1) * 500}ms... (attempt ${retryCount + 1}/3)`);
+        await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 500));
+        return loadFreeAttemptsStatus(retryCount + 1);
+      } else {
+        console.error('Failed to load free attempts after 3 retries - session cookie may not be set');
+        // Initialize default status so UI shows "0" instead of "Loading"
+        appState.freeAttemptsStatus = { remainingAttempts: 0, usedToday: 0, maxPerDay: 3 };
+        updateFreeAttemptsUI();
+        return;
+      }
+    }
+    
     const data = await res.json();
 
     if (data.ok) {
@@ -956,9 +995,15 @@ async function loadFreeAttemptsStatus() {
       updateFreeAttemptsUI();
     } else {
       console.error('Failed to load free attempts status:', data.error);
+      // Initialize default status on error
+      appState.freeAttemptsStatus = { remainingAttempts: 0, usedToday: 0, maxPerDay: 3 };
+      updateFreeAttemptsUI();
     }
   } catch (error) {
     console.error('Error loading free attempts status:', error);
+    // Initialize default status on error
+    appState.freeAttemptsStatus = { remainingAttempts: 0, usedToday: 0, maxPerDay: 3 };
+    updateFreeAttemptsUI();
   }
 }
 
@@ -970,7 +1015,10 @@ function updateFreeAttemptsUI() {
   const playBtn = document.getElementById('freeAttemptBtn');
   const resultDiv = document.getElementById('freeAttemptsResult');
 
-  if (!appState.freeAttemptsStatus) return;
+  // If status is null, initialize with default (0 attempts) so UI shows "0" instead of "Loading"
+  if (!appState.freeAttemptsStatus) {
+    appState.freeAttemptsStatus = { remainingAttempts: 0, usedToday: 0, maxPerDay: 3 };
+  }
 
   const { remainingAttempts, usedToday, maxPerDay } = appState.freeAttemptsStatus;
 
@@ -1236,8 +1284,12 @@ async function loadWalletSummary() {
     if (!error.message.includes('401') && !error.message.includes('Unauthorized')) {
     console.warn('Failed to load wallet summary:', error);
     }
-    // Graceful degradation: show "—" for all tiers
-    renderWalletSummary(true);
+    // Graceful degradation: show 0 for all tiers instead of "—"
+    // Initialize empty wallet if not set
+    if (!appState.wallet) {
+      appState.wallet = { BRONZE: 0, SILVER: 0, GOLD: 0, EMERALD: 0, SAPPHIRE: 0, RUBY: 0, AMETHYST: 0, DIAMOND: 0 };
+    }
+    renderWalletSummary(false); // Show 0 instead of "—"
     renderTierGameButtons(); // Re-render tier buttons when wallet loads
   }
 }
