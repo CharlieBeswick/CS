@@ -39,15 +39,20 @@ async function fixMigrationState() {
       return;
     }
 
-    // Delete failed SQLite migrations from the migration history
-    // This allows new PostgreSQL migrations to apply
+    // Delete ALL failed migrations (both old SQLite and new PostgreSQL ones)
+    // This allows new migrations to apply
+    // We delete:
+    // 1. Old SQLite migrations (Nov 23-26)
+    // 2. Any migration that failed (finished_at IS NULL but started_at IS NOT NULL)
+    // 3. The new PostgreSQL migration if it failed
     const result = await client.query(`
       DELETE FROM "_prisma_migrations" 
       WHERE migration_name LIKE '20251123%' 
          OR migration_name LIKE '20251124%'
          OR migration_name LIKE '20251125%'
          OR migration_name LIKE '20251126%'
-         OR finished_at IS NULL
+         OR migration_name = '20251129131500_init_postgresql'
+         OR (finished_at IS NULL AND started_at IS NOT NULL)
          OR rolled_back_at IS NOT NULL;
     `);
 
@@ -55,6 +60,19 @@ async function fixMigrationState() {
       console.log(`✅ Cleaned up ${result.rowCount} old/failed migration(s) from history`);
     } else {
       console.log('ℹ️  No old migrations found to clean up');
+    }
+    
+    // Also check if there are any partially applied migrations that need cleanup
+    // Sometimes migrations fail partway through and leave the database in a bad state
+    const failedCheck = await client.query(`
+      SELECT migration_name, started_at, finished_at 
+      FROM "_prisma_migrations" 
+      WHERE finished_at IS NULL AND started_at IS NOT NULL;
+    `);
+    
+    if (failedCheck.rows.length > 0) {
+      console.log(`⚠️  Found ${failedCheck.rows.length} failed migration(s) still in database`);
+      console.log('⚠️  These will be cleaned up on next run');
     }
   } catch (error) {
     // If table doesn't exist or query fails, that's OK - migrations will create it
