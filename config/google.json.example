@@ -1,5 +1,5 @@
 {
-  "clientId": "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+  "clientId": "471918731686-l1a6qm3hlqgablic5ks7u24ob5ghd800.apps.googleusercontent.com",
   "clientSecret": "YOUR_GOOGLE_CLIENT_SECRET",
   "note": "Copy this file to google.json and fill in your actual Google OAuth credentials. Or use environment variables instead."
 }

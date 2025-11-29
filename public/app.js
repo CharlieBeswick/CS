@@ -474,7 +474,7 @@ function initializeGoogleSignIn() {
   }
   
   try {
-    const GOOGLE_CLIENT_ID = '471918731686-11a6qm3hlqgablic5ks7u24ob5ghd800.apps.googleusercontent.com';
+    const GOOGLE_CLIENT_ID = '471918731686-l1a6qm3hlqgablic5ks7u24ob5ghd800.apps.googleusercontent.com';
     console.log('Initializing Google Sign-In with Client ID:', GOOGLE_CLIENT_ID);
     google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
@@ -590,7 +590,7 @@ async function handleGoogleSignInWithToken(accessToken) {
     // Actually, let's just trigger the normal flow by using Google's ID token flow
     if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
       // Try to get ID token instead
-      const GOOGLE_CLIENT_ID = '471918731686-11a6qm3hlqgablic5ks7u24ob5ghd800.apps.googleusercontent.com';
+      const GOOGLE_CLIENT_ID = '471918731686-l1a6qm3hlqgablic5ks7u24ob5ghd800.apps.googleusercontent.com';
       console.log('Re-initializing Google Sign-In with Client ID:', GOOGLE_CLIENT_ID);
       google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
