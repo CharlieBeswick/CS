@@ -21,14 +21,36 @@ if (!process.env.DATABASE_URL) {
     console.log('ℹ️  Migration state check skipped:', error.message);
   }
   
-  // Try to run migrations
-  console.log('📦 Running database migrations...');
-  try {
-    execSync('npx prisma migrate deploy', { stdio: 'inherit', timeout: 30000 });
-    console.log('✅ Migrations completed successfully');
-  } catch (error) {
-    console.warn('⚠️  Migration failed or database not ready:', error.message);
-    console.log('⚠️  Continuing anyway - server will start and migrations can be retried');
+  // Check if migrations directory exists and has migrations
+  const fs = require('fs');
+  const path = require('path');
+  const migrationsPath = path.join(__dirname, '..', 'prisma', 'migrations');
+  const hasMigrations = fs.existsSync(migrationsPath) && 
+    fs.readdirSync(migrationsPath).some(item => 
+      fs.statSync(path.join(migrationsPath, item)).isDirectory() && 
+      item !== 'migration_lock.toml'
+    );
+  
+  if (!hasMigrations) {
+    // No migrations exist - use db push to bootstrap the schema
+    console.log('📦 No migrations found - using db push to bootstrap schema...');
+    try {
+      execSync('npx prisma db push --skip-generate', { stdio: 'inherit', timeout: 60000 });
+      console.log('✅ Schema pushed successfully');
+    } catch (error) {
+      console.warn('⚠️  db push failed:', error.message);
+      console.log('⚠️  Continuing anyway - server will start');
+    }
+  } else {
+    // Migrations exist - run migrate deploy
+    console.log('📦 Running database migrations...');
+    try {
+      execSync('npx prisma migrate deploy', { stdio: 'inherit', timeout: 30000 });
+      console.log('✅ Migrations completed successfully');
+    } catch (error) {
+      console.warn('⚠️  Migration failed or database not ready:', error.message);
+      console.log('⚠️  Continuing anyway - server will start and migrations can be retried');
+    }
   }
 }
 
