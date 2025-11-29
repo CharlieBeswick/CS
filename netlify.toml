@@ -8,7 +8,14 @@
   # Skip Prisma generation for Netlify (frontend only)
   SKIP_PRISMA = "true"
 
-# Redirects for SPA routing
+# Redirect admin panel to Railway backend
+[[redirects]]
+  from = "/admin"
+  to = "https://perpetual-reprieve-try3.up.railway.app/admin"
+  status = 200
+  force = true
+
+# Redirects for SPA routing (must come after specific routes)
 [[redirects]]
   from = "/*"
   to = "/index.html"

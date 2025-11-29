@@ -3,7 +3,11 @@
  * Clean admin dashboard skeleton
  */
 
-const API_BASE = window.location.origin;
+// API base URL - use Railway backend URL in production, or localhost for development
+// This ensures the admin panel works correctly whether accessed from the backend URL or frontend URL
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : 'https://perpetual-reprieve-try3.up.railway.app';
 
 /**
  * Initialize admin panel
