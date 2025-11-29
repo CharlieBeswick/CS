@@ -8,10 +8,16 @@
   # Skip Prisma generation for Netlify (frontend only)
   SKIP_PRISMA = "true"
 
-# Redirect admin panel to Railway backend
+# Redirect admin panel and its assets to Railway backend
 [[redirects]]
   from = "/admin"
   to = "https://perpetual-reprieve-try3.up.railway.app/admin"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/admin-assets/*"
+  to = "https://perpetual-reprieve-try3.up.railway.app/admin-assets/:splat"
   status = 200
   force = true
 

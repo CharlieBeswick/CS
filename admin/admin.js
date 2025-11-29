@@ -93,8 +93,14 @@ function showNoAdminAccess(message) {
     noAccess.style.display = 'flex';
     if (messageEl) {
       messageEl.textContent = message;
+      // Remove any existing help text to avoid duplicates
+      const existingHelp = messageEl.parentElement.querySelector('.admin-help-text');
+      if (existingHelp) {
+        existingHelp.remove();
+      }
       // Add helpful message about signing in
       const helpText = document.createElement('p');
+      helpText.className = 'admin-help-text';
       helpText.style.marginTop = '1rem';
       helpText.style.color = 'var(--admin-text-muted)';
       helpText.style.fontSize = '0.9rem';
