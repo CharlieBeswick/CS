@@ -142,5 +142,6 @@ module.exports = {
   optionalAuth,
   generateToken,
   verifyToken,
+  tokenStore, // Export tokenStore for debugging
 };
 

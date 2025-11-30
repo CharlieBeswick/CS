@@ -656,6 +656,38 @@ router.get('/me', async (req, res) => {
 });
 
 /**
+ * GET /auth/debug-token-store
+ * Debug endpoint to check token store status (remove in production)
+ */
+router.get('/debug-token-store', (req, res) => {
+  const { verifyToken } = require('../middleware/authMiddleware');
+  
+  // Get token from header if provided
+  const token = req.headers['x-auth-token'];
+  
+  const result = {
+    tokenStoreSize: require('../middleware/authMiddleware').tokenStore?.size || 0,
+    hasTokenInHeader: !!token,
+    tokenLength: token ? token.length : 0,
+    tokenPreview: token ? token.substring(0, 10) + '...' : null,
+    tokenVerified: token ? !!verifyToken(token) : false,
+    sampleTokens: [],
+  };
+  
+  // Get sample tokens (first 3) for debugging
+  if (require('../middleware/authMiddleware').tokenStore) {
+    const tokenStore = require('../middleware/authMiddleware').tokenStore;
+    const tokens = Array.from(tokenStore.keys()).slice(0, 3);
+    result.sampleTokens = tokens.map(t => ({
+      preview: t.substring(0, 10) + '...',
+      length: t.length,
+    }));
+  }
+  
+  res.json(result);
+});
+
+/**
  * POST /auth/logout
  * Destroys the user session
  */
