@@ -876,6 +876,13 @@ function loadTicketsScreen() {
   // Update legacy balance UI (deprecated)
   updateTicketsBalanceUI();
   
+  // iOS FIX: Clean up any active watch ad countdown when loading tickets screen
+  // This prevents countdown from continuing if user navigates away and comes back
+  if (watchAdCountdown) {
+    clearInterval(watchAdCountdown);
+    watchAdCountdown = null;
+  }
+
   // Reset watch ad button state
   const watchAdBtn = document.getElementById('watchAdBtn');
   if (watchAdBtn) {
@@ -1120,8 +1127,56 @@ async function handleFreeAttemptPlay() {
 /**
  * Watch ad flow - awards 1 Bronze ticket per confirmed ad view
  * Updated to use new /api/rewards/ad endpoint
+ * 
+ * iOS FIX: Added retry logic for 401 errors (iOS Safari cookie delay issue)
+ * iOS FIX: Check response status before parsing JSON to handle errors properly
  */
 let watchAdCountdown = null;
+
+/**
+ * Internal function to call the ad rewards API with retry logic
+ * This addresses iOS Safari cookie processing delays that can cause 401 errors
+ */
+async function callAdRewardsAPI(retryCount = 0) {
+  const res = await fetch(`${API_BASE}/api/rewards/ad`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+  });
+
+  // iOS FIX: Handle 401 (unauthorized) - session cookie might not be set yet (iOS Safari issue)
+  // This is the same pattern used in loadWallet and loadFreeAttemptsStatus
+  if (res.status === 401) {
+    if (retryCount < 3) {
+      console.log(`Ad reward request failed (401), retrying in ${(retryCount + 1) * 500}ms... (attempt ${retryCount + 1}/3)`);
+      await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 500));
+      return callAdRewardsAPI(retryCount + 1);
+    } else {
+      console.error('Failed to process ad reward after 3 retries - session cookie may not be set');
+      throw new Error('Session expired. Please sign in again.');
+    }
+  }
+
+  // iOS FIX: Check if response is ok before parsing JSON
+  // This prevents errors when the server returns non-JSON error responses
+  if (!res.ok) {
+    const errorText = await res.text();
+    let errorMessage = 'Failed to process ad reward';
+    try {
+      const errorData = JSON.parse(errorText);
+      errorMessage = errorData.error || errorMessage;
+    } catch (e) {
+      // If response isn't JSON, use status text
+      errorMessage = `Server error: ${res.status} ${res.statusText}`;
+    }
+    throw new Error(errorMessage);
+  }
+
+  const data = await res.json();
+  return data;
+}
 
 async function handleWatchAd() {
   if (!appState.currentUser) {
@@ -1138,6 +1193,9 @@ async function handleWatchAd() {
   let secondsLeft = 5;
   watchAdBtn.textContent = `Watching… ${secondsLeft}s`;
 
+  // iOS FIX: Use setInterval with proper cleanup and error handling
+  // Note: iOS Safari may throttle timers when tab is in background, but this should
+  // still work for the 5-second countdown as long as the tab remains active
   watchAdCountdown = setInterval(() => {
     secondsLeft--;
     if (secondsLeft > 0) {
@@ -1147,15 +1205,8 @@ async function handleWatchAd() {
       watchAdCountdown = null;
       watchAdBtn.textContent = 'Processing...';
 
-      // Call new backend endpoint for ad rewards
-      fetch(`${API_BASE}/api/rewards/ad`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      })
-        .then(res => res.json())
+      // Call backend endpoint for ad rewards with retry logic (iOS Safari fix)
+      callAdRewardsAPI()
         .then(data => {
           if (data.ok) {
             // Update wallet with new balances
@@ -1186,7 +1237,9 @@ async function handleWatchAd() {
         })
         .catch(error => {
           console.error('Watch ad error:', error);
-          alert('Something went wrong. Please try again.');
+          // Show user-friendly error message
+          const errorMessage = error.message || 'Something went wrong. Please try again.';
+          alert(errorMessage);
 
           // Re-enable button
           watchAdBtn.disabled = false;
