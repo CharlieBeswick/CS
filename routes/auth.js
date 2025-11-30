@@ -578,13 +578,32 @@ router.post('/login', async (req, res) => {
 
 /**
  * GET /auth/me
- * Returns the currently authenticated user (if session is valid)
+ * Returns the currently authenticated user (if session or token is valid)
+ * Safari FIX: Also checks X-Auth-Token header for Safari users
  */
 router.get('/me', async (req, res) => {
-  if (req.session && req.session.userId) {
+  let userId = null;
+  
+  // Safari FIX: Check for token header first (Safari fallback)
+  const { verifyToken } = require('../middleware/authMiddleware');
+  const token = req.headers['x-auth-token'];
+  if (token) {
+    userId = verifyToken(token);
+    if (userId) {
+      console.log('[AUTH] /me: Using token-based auth (Safari fallback)');
+    }
+  }
+  
+  // Fall back to session cookie (normal flow for Chrome, etc.)
+  if (!userId && req.session && req.session.userId) {
+    userId = req.session.userId;
+    console.log('[AUTH] /me: Using session cookie auth');
+  }
+  
+  if (userId) {
     try {
       const user = await prisma.user.findUnique({
-        where: { id: req.session.userId },
+        where: { id: userId },
       });
       
       if (user) {
@@ -606,6 +625,7 @@ router.get('/me', async (req, res) => {
       console.error('Error fetching user:', error);
     }
   }
+  
   res.json({ ok: false });
 });
 
