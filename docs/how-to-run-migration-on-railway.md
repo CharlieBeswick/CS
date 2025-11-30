@@ -32,16 +32,26 @@ railway link
 
 This will show you a list of your Railway projects - select the one for this app.
 
-### Step 4: Run the Migration
+### Step 4: SSH into Railway and Run the Migration
+
+**Important:** You can't run `railway run` locally because Railway's database uses internal hostnames. You need to SSH into the Railway container.
 
 ```bash
-railway run npx prisma db push
+railway ssh
+```
+
+This will open a shell **inside your Railway service**. Then run:
+
+```bash
+npx prisma db push
 ```
 
 This will:
-- Connect to your Railway database
+- Connect to your Railway database (from inside Railway's network)
 - Create the `AuthToken` table
 - Complete immediately
+
+Type `exit` when done to leave the SSH session.
 
 **That's it!** The table will be created and Safari login should work.
 
@@ -99,6 +109,11 @@ Look for:
 ---
 
 ## Troubleshooting
+
+### "Can't reach database server at postgres.railway.internal"
+- **This is normal!** Railway's internal hostnames only work from inside Railway's network
+- **Solution:** Use `railway ssh` to connect to your service, then run `npx prisma db push` from inside
+- OR wait for automatic migration on deploy (check logs)
 
 ### "Command not found: railway"
 - Make sure Railway CLI is installed: `npm i -g @railway/cli`
