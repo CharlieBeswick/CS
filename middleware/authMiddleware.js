@@ -9,80 +9,96 @@
 const prisma = require('../lib/prisma');
 const crypto = require('crypto');
 
-// In-memory token store (in production, use Redis or database)
-// Format: { token: { userId, expiresAt, createdAt } }
-const tokenStore = new Map();
+// Token expiry: 24 hours
 const TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 
-// Clean up expired tokens every hour
-setInterval(() => {
-  const now = Date.now();
-  for (const [token, data] of tokenStore.entries()) {
-    if (data.expiresAt < now) {
-      tokenStore.delete(token);
+// Clean up expired tokens from database every hour
+setInterval(async () => {
+  try {
+    const now = new Date();
+    const deleted = await prisma.authToken.deleteMany({
+      where: {
+        expiresAt: {
+          lt: now,
+        },
+      },
+    });
+    if (deleted.count > 0) {
+      console.log(`[TOKEN] Cleaned up ${deleted.count} expired tokens from database`);
     }
+  } catch (error) {
+    console.error('[TOKEN] Error cleaning up expired tokens:', error);
   }
 }, 60 * 60 * 1000);
 
 /**
  * Generate a secure token for Safari users
+ * Stores token in database for persistence across server restarts
  */
-function generateToken(userId) {
+async function generateToken(userId) {
   const token = crypto.randomBytes(32).toString('hex');
-  const expiresAt = Date.now() + TOKEN_EXPIRY;
-  tokenStore.set(token, { userId, expiresAt, createdAt: Date.now() });
+  const expiresAt = new Date(Date.now() + TOKEN_EXPIRY);
   
-  // Log token generation for debugging
-  console.log('[TOKEN] Generated new token:', {
-    userId: userId,
-    tokenLength: token.length,
-    tokenPreview: token.substring(0, 10) + '...',
-    expiresAt: new Date(expiresAt).toISOString(),
-    tokenStoreSize: tokenStore.size,
-  });
-  
-  // Verify token was stored
-  const stored = tokenStore.get(token);
-  if (!stored) {
-    console.error('[TOKEN] ERROR: Token was not stored in tokenStore!');
-  } else {
-    console.log('[TOKEN] Token confirmed stored in tokenStore, userId:', stored.userId);
+  try {
+    // Store token in database
+    await prisma.authToken.create({
+      data: {
+        token,
+        userId,
+        expiresAt,
+      },
+    });
+    
+    console.log('[TOKEN] Generated new token (database):', {
+      userId: userId,
+      tokenLength: token.length,
+      tokenPreview: token.substring(0, 10) + '...',
+      expiresAt: expiresAt.toISOString(),
+    });
+    
+    return token;
+  } catch (error) {
+    console.error('[TOKEN] ERROR: Failed to store token in database:', error);
+    throw error;
   }
-  
-  return token;
 }
 
 /**
  * Verify a token and return userId
+ * Checks database for token persistence across server restarts
  */
-function verifyToken(token) {
+async function verifyToken(token) {
   if (!token) {
     console.log('[TOKEN] verifyToken called with null/undefined token');
     return null;
   }
   
-  console.log('[TOKEN] Verifying token, length:', token.length, 'preview:', token.substring(0, 10) + '...');
-  console.log('[TOKEN] Token store size:', tokenStore.size);
+  console.log('[TOKEN] Verifying token (database), length:', token.length, 'preview:', token.substring(0, 10) + '...');
   
-  const data = tokenStore.get(token);
-  if (!data) {
-    console.log('[TOKEN] Token not found in store');
-    // Log first few tokens in store for debugging (don't log full tokens for security)
-    if (tokenStore.size > 0) {
-      const sampleTokens = Array.from(tokenStore.keys()).slice(0, 3);
-      console.log('[TOKEN] Sample tokens in store (first 10 chars):', sampleTokens.map(t => t.substring(0, 10) + '...'));
+  try {
+    const authToken = await prisma.authToken.findUnique({
+      where: { token },
+      include: { user: { select: { id: true } } },
+    });
+    
+    if (!authToken) {
+      console.log('[TOKEN] Token not found in database');
+      return null;
     }
+    
+    if (authToken.expiresAt < new Date()) {
+      console.log('[TOKEN] Token expired, expiresAt:', authToken.expiresAt.toISOString(), 'now:', new Date().toISOString());
+      // Delete expired token
+      await prisma.authToken.delete({ where: { id: authToken.id } });
+      return null;
+    }
+    
+    console.log('[TOKEN] Token verified successfully (database), userId:', authToken.userId);
+    return authToken.userId;
+  } catch (error) {
+    console.error('[TOKEN] Error verifying token from database:', error);
     return null;
   }
-  
-  if (data.expiresAt < Date.now()) {
-    console.log('[TOKEN] Token expired, expiresAt:', new Date(data.expiresAt).toISOString(), 'now:', new Date().toISOString());
-    tokenStore.delete(token);
-    return null;
-  }
-  
-  console.log('[TOKEN] Token verified successfully, userId:', data.userId);
-  return data.userId;
 }
 
 async function requireAuth(req, res, next) {
@@ -91,7 +107,7 @@ async function requireAuth(req, res, next) {
   // Safari FIX: Check for token header first (Safari fallback)
   const token = req.headers['x-auth-token'];
   if (token) {
-    userId = verifyToken(token);
+    userId = await verifyToken(token);
     if (userId) {
       console.log('requireAuth: Using token-based auth (Safari fallback)');
     }
@@ -142,6 +158,5 @@ module.exports = {
   optionalAuth,
   generateToken,
   verifyToken,
-  tokenStore, // Export tokenStore for debugging
 };
 

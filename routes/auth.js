@@ -136,7 +136,7 @@ router.post('/google', async (req, res) => {
 
     // Safari FIX: Generate token for Safari users (fallback when cookies are blocked)
     const { generateToken } = require('../middleware/authMiddleware');
-    const authToken = generateToken(finalUser.id);
+    const authToken = await generateToken(finalUser.id);
 
     // Safari FIX: Redirect to first-party frontend page to store token in localStorage
     // This works around Safari's cross-origin localStorage restrictions
@@ -298,7 +298,7 @@ router.post('/register', async (req, res) => {
 
     // Safari FIX: Generate token and redirect to first-party frontend page
     const { generateToken } = require('../middleware/authMiddleware');
-    const authToken = generateToken(user.id);
+    const authToken = await generateToken(user.id);
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
     const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
@@ -379,7 +379,7 @@ router.post('/login', async (req, res) => {
 
     // Safari FIX: Generate token and redirect to first-party frontend page
     const { generateToken } = require('../middleware/authMiddleware');
-    const authToken = generateToken(user.id);
+    const authToken = await generateToken(user.id);
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
     const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
@@ -492,7 +492,7 @@ router.post('/register', async (req, res) => {
 
     // Safari FIX: Generate token and redirect to first-party frontend page
     const { generateToken } = require('../middleware/authMiddleware');
-    const authToken = generateToken(user.id);
+    const authToken = await generateToken(user.id);
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
     const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
@@ -571,7 +571,7 @@ router.post('/login', async (req, res) => {
 
     // Safari FIX: Generate token and redirect to first-party frontend page
     const { generateToken } = require('../middleware/authMiddleware');
-    const authToken = generateToken(user.id);
+    const authToken = await generateToken(user.id);
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
     const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
@@ -607,7 +607,7 @@ router.get('/me', async (req, res) => {
   });
   
   if (token) {
-    userId = verifyToken(token);
+    userId = await verifyToken(token);
     if (userId) {
       console.log('[AUTH] /me: Using token-based auth (Safari fallback), userId:', userId);
     } else {
@@ -670,7 +670,7 @@ router.get('/debug-token-store', (req, res) => {
     hasTokenInHeader: !!token,
     tokenLength: token ? token.length : 0,
     tokenPreview: token ? token.substring(0, 10) + '...' : null,
-    tokenVerified: token ? !!verifyToken(token) : false,
+    tokenVerified: token ? !!(await verifyToken(token)) : false,
     sampleTokens: [],
   };
   
