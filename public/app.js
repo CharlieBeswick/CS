@@ -2877,7 +2877,10 @@ async function handleBronzeChatSubmit(event) {
   if (!input || input.disabled) return;
   const message = input.value.trim();
   if (!message) return;
-  if (!appState.bronzeLobby?.id) return;
+  
+  // Get the current lobby (tier-aware, but still works for legacy Bronze)
+  const lobby = appState.currentTierLobby || appState.bronzeLobby;
+  if (!lobby?.id) return;
 
   const sendBtn = document.getElementById('bronzeChatSend');
   sendBtn.disabled = true;
