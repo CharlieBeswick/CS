@@ -136,16 +136,33 @@ router.post('/google', async (req, res) => {
 
     // Safari FIX: Generate token for Safari users (fallback when cookies are blocked)
     const { generateToken } = require('../middleware/authMiddleware');
-    const authToken = await generateToken(finalUser.id);
+    let authToken = null;
+    
+    try {
+      authToken = await generateToken(finalUser.id);
+    } catch (tokenError) {
+      // If token generation fails (e.g., AuthToken table doesn't exist yet),
+      // log the error but still allow login to proceed with session cookie
+      // Safari users will need to wait for migration to complete
+      console.error('[AUTH] Token generation failed, but login will proceed with session cookie:', tokenError.message);
+      console.error('[AUTH] This is likely because AuthToken table does not exist yet. Migration may not have run.');
+      // Continue without token - user can still use session cookie (works on Chrome)
+    }
 
     // Safari FIX: Redirect to first-party frontend page to store token in localStorage
     // This works around Safari's cross-origin localStorage restrictions
     // Token is stored on cryptosnow.app domain, not in OAuth popup or backend domain
     const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
-    const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
+    const redirectUrl = authToken 
+      ? `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`
+      : `${frontendUrl}/auth-complete?error=token_generation_failed`;
     
     console.log(`[AUTH] Google OAuth success for ${email}, redirecting to:`, redirectUrl.substring(0, 100) + '...');
-    console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
+    if (authToken) {
+      console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
+    } else {
+      console.log(`[AUTH] No token generated - user will need to use session cookie or wait for migration`);
+    }
     
     res.redirect(302, redirectUrl);
   } catch (error) {
@@ -298,13 +315,28 @@ router.post('/register', async (req, res) => {
 
     // Safari FIX: Generate token and redirect to first-party frontend page
     const { generateToken } = require('../middleware/authMiddleware');
-    const authToken = await generateToken(user.id);
+    let authToken = null;
+    
+    try {
+      authToken = await generateToken(user.id);
+    } catch (tokenError) {
+      // If token generation fails (e.g., AuthToken table doesn't exist yet),
+      // log the error but still allow login to proceed with session cookie
+      console.error('[AUTH] Token generation failed, but login will proceed with session cookie:', tokenError.message);
+      console.error('[AUTH] This is likely because AuthToken table does not exist yet. Migration may not have run.');
+    }
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
-    const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
+    const redirectUrl = authToken 
+      ? `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`
+      : `${frontendUrl}/auth-complete?error=token_generation_failed`;
     
     console.log(`[AUTH] Login success for ${user.email}, redirecting to:`, redirectUrl.substring(0, 100) + '...');
-    console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
+    if (authToken) {
+      console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
+    } else {
+      console.log(`[AUTH] No token generated - user will need to use session cookie or wait for migration`);
+    }
     
     res.redirect(302, redirectUrl);
   } catch (error) {
@@ -379,13 +411,28 @@ router.post('/login', async (req, res) => {
 
     // Safari FIX: Generate token and redirect to first-party frontend page
     const { generateToken } = require('../middleware/authMiddleware');
-    const authToken = await generateToken(user.id);
+    let authToken = null;
+    
+    try {
+      authToken = await generateToken(user.id);
+    } catch (tokenError) {
+      // If token generation fails (e.g., AuthToken table doesn't exist yet),
+      // log the error but still allow login to proceed with session cookie
+      console.error('[AUTH] Token generation failed, but login will proceed with session cookie:', tokenError.message);
+      console.error('[AUTH] This is likely because AuthToken table does not exist yet. Migration may not have run.');
+    }
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
-    const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
+    const redirectUrl = authToken 
+      ? `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`
+      : `${frontendUrl}/auth-complete?error=token_generation_failed`;
     
     console.log(`[AUTH] Login success for ${user.email}, redirecting to:`, redirectUrl.substring(0, 100) + '...');
-    console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
+    if (authToken) {
+      console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
+    } else {
+      console.log(`[AUTH] No token generated - user will need to use session cookie or wait for migration`);
+    }
     
     res.redirect(302, redirectUrl);
   } catch (error) {
@@ -492,13 +539,28 @@ router.post('/register', async (req, res) => {
 
     // Safari FIX: Generate token and redirect to first-party frontend page
     const { generateToken } = require('../middleware/authMiddleware');
-    const authToken = await generateToken(user.id);
+    let authToken = null;
+    
+    try {
+      authToken = await generateToken(user.id);
+    } catch (tokenError) {
+      // If token generation fails (e.g., AuthToken table doesn't exist yet),
+      // log the error but still allow login to proceed with session cookie
+      console.error('[AUTH] Token generation failed, but login will proceed with session cookie:', tokenError.message);
+      console.error('[AUTH] This is likely because AuthToken table does not exist yet. Migration may not have run.');
+    }
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
-    const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
+    const redirectUrl = authToken 
+      ? `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`
+      : `${frontendUrl}/auth-complete?error=token_generation_failed`;
     
     console.log(`[AUTH] Login success for ${user.email}, redirecting to:`, redirectUrl.substring(0, 100) + '...');
-    console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
+    if (authToken) {
+      console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
+    } else {
+      console.log(`[AUTH] No token generated - user will need to use session cookie or wait for migration`);
+    }
     
     res.redirect(302, redirectUrl);
   } catch (error) {
@@ -571,13 +633,28 @@ router.post('/login', async (req, res) => {
 
     // Safari FIX: Generate token and redirect to first-party frontend page
     const { generateToken } = require('../middleware/authMiddleware');
-    const authToken = await generateToken(user.id);
+    let authToken = null;
+    
+    try {
+      authToken = await generateToken(user.id);
+    } catch (tokenError) {
+      // If token generation fails (e.g., AuthToken table doesn't exist yet),
+      // log the error but still allow login to proceed with session cookie
+      console.error('[AUTH] Token generation failed, but login will proceed with session cookie:', tokenError.message);
+      console.error('[AUTH] This is likely because AuthToken table does not exist yet. Migration may not have run.');
+    }
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
-    const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
+    const redirectUrl = authToken 
+      ? `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`
+      : `${frontendUrl}/auth-complete?error=token_generation_failed`;
     
     console.log(`[AUTH] Login success for ${user.email}, redirecting to:`, redirectUrl.substring(0, 100) + '...');
-    console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
+    if (authToken) {
+      console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
+    } else {
+      console.log(`[AUTH] No token generated - user will need to use session cookie or wait for migration`);
+    }
     
     res.redirect(302, redirectUrl);
   } catch (error) {

@@ -74,6 +74,35 @@ async function init() {
   // Check if we're on the auth-complete page with a token
   const urlParams = new URLSearchParams(window.location.search);
   let token = urlParams.get('token');
+  const error = urlParams.get('error');
+  
+  // Check for token generation error
+  if (error === 'token_generation_failed') {
+    console.warn('[AUTH] Token generation failed on backend - AuthToken table may not exist yet');
+    console.warn('[AUTH] User can still use session cookie (works on Chrome), but Safari will need migration');
+    // Try to verify with session cookie instead
+    try {
+      const response = await fetch(`${API_BASE}/auth/me`, {
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (data.ok && data.user) {
+        console.log('[AUTH] Session cookie works, user authenticated:', data.user.email);
+        setCurrentUser(data.user);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        showScreen('lobby');
+        setupEventListeners();
+        return;
+      }
+    } catch (e) {
+      console.error('[AUTH] Session cookie also failed:', e);
+    }
+    // If session cookie also fails, show error
+    alert('Authentication setup incomplete. Please check server logs and ensure AuthToken table migration has run.');
+    showScreen('login');
+    setupEventListeners();
+    return;
+  }
   
   // Decode token in case it was URL-encoded (shouldn't be needed but just in case)
   if (token) {
