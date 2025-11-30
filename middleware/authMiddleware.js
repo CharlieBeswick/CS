@@ -31,6 +31,24 @@ function generateToken(userId) {
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = Date.now() + TOKEN_EXPIRY;
   tokenStore.set(token, { userId, expiresAt, createdAt: Date.now() });
+  
+  // Log token generation for debugging
+  console.log('[TOKEN] Generated new token:', {
+    userId: userId,
+    tokenLength: token.length,
+    tokenPreview: token.substring(0, 10) + '...',
+    expiresAt: new Date(expiresAt).toISOString(),
+    tokenStoreSize: tokenStore.size,
+  });
+  
+  // Verify token was stored
+  const stored = tokenStore.get(token);
+  if (!stored) {
+    console.error('[TOKEN] ERROR: Token was not stored in tokenStore!');
+  } else {
+    console.log('[TOKEN] Token confirmed stored in tokenStore, userId:', stored.userId);
+  }
+  
   return token;
 }
 

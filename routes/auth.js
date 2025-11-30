@@ -144,7 +144,9 @@ router.post('/google', async (req, res) => {
     const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
     const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
     
-    console.log(`[AUTH] Redirecting to frontend with token for user ${email}`);
+    console.log(`[AUTH] Google OAuth success for ${email}, redirecting to:`, redirectUrl.substring(0, 100) + '...');
+    console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
+    
     res.redirect(302, redirectUrl);
   } catch (error) {
     console.error('Google auth error:', error);
@@ -301,7 +303,9 @@ router.post('/register', async (req, res) => {
     const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
     const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
     
-    console.log(`[AUTH] Redirecting to frontend with token for user ${user.email}`);
+    console.log(`[AUTH] Login success for ${user.email}, redirecting to:`, redirectUrl.substring(0, 100) + '...');
+    console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
+    
     res.redirect(302, redirectUrl);
   } catch (error) {
     console.error('Registration error:', error);
@@ -380,7 +384,9 @@ router.post('/login', async (req, res) => {
     const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
     const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
     
-    console.log(`[AUTH] Redirecting to frontend with token for user ${user.email}`);
+    console.log(`[AUTH] Login success for ${user.email}, redirecting to:`, redirectUrl.substring(0, 100) + '...');
+    console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
+    
     res.redirect(302, redirectUrl);
   } catch (error) {
     console.error('Login error:', error);
@@ -491,7 +497,9 @@ router.post('/register', async (req, res) => {
     const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
     const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
     
-    console.log(`[AUTH] Redirecting to frontend with token for user ${user.email}`);
+    console.log(`[AUTH] Login success for ${user.email}, redirecting to:`, redirectUrl.substring(0, 100) + '...');
+    console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
+    
     res.redirect(302, redirectUrl);
   } catch (error) {
     console.error('Registration error:', error);
@@ -568,7 +576,9 @@ router.post('/login', async (req, res) => {
     const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
     const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
     
-    console.log(`[AUTH] Redirecting to frontend with token for user ${user.email}`);
+    console.log(`[AUTH] Login success for ${user.email}, redirecting to:`, redirectUrl.substring(0, 100) + '...');
+    console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
+    
     res.redirect(302, redirectUrl);
   } catch (error) {
     console.error('Login error:', error);
