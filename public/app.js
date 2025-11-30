@@ -934,14 +934,31 @@ async function loadWallet(retryCount = 0) {
   try {
     const headers = getAuthHeaders();
     const hasToken = !!headers['X-Auth-Token'];
+    const isSafariBrowser = isSafari();
     
     // DEBUG: Log wallet request details
     console.log(`[WALLET] Request attempt ${retryCount + 1}:`, {
       url: `${API_BASE}/api/wallet`,
       hasToken: hasToken,
-      isSafari: isSafari(),
+      isSafari: isSafariBrowser,
       headers: Object.keys(headers),
     });
+    
+    // Safari FIX: If Safari and no token, user logged in before token system
+    // Don't silently fail - show helpful message
+    if (isSafariBrowser && !hasToken && retryCount === 0) {
+      console.warn('[WALLET] Safari user has no token - may have logged in before token system was implemented');
+      const walletGrid = document.getElementById('walletGrid');
+      if (walletGrid) {
+        walletGrid.innerHTML = `
+          <div class="wallet-error-message" style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: #ff6b6b;">
+            <p style="margin: 0.5rem 0; font-weight: bold;">Unable to load wallet on Safari</p>
+            <p style="margin: 0.5rem 0; font-size: 0.9rem;">Please sign out and sign in again to enable Safari support, or use Chrome.</p>
+          </div>
+        `;
+      }
+      return;
+    }
     
     const res = await fetch(`${API_BASE}/api/wallet`, {
       credentials: 'include',
@@ -959,15 +976,38 @@ async function loadWallet(retryCount = 0) {
     // Safari FIX: Handle 401 (unauthorized) - session cookie might not be set yet (Safari ITP issue)
     // Safari's Intelligent Tracking Prevention blocks cross-origin cookies aggressively
     if (res.status === 401) {
+      // Safari FIX: If we sent a token and got 401, token is invalid (server restarted?)
+      if (hasToken && retryCount === 0) {
+        console.warn('[WALLET] Token invalid (server may have restarted) - clearing from localStorage');
+        localStorage.removeItem('authToken');
+        // Retry once without token (will use cookie if available, or show error)
+        return loadWallet(1);
+      }
+      
       if (retryCount < 5) { // Safari FIX: Increase max retries for Safari
-        const baseDelay = isSafari() ? 1000 : 500; // Safari gets longer delays
+        const baseDelay = isSafariBrowser ? 1000 : 500; // Safari gets longer delays
         const delayMs = baseDelay * (retryCount + 1);
-        console.log(`Wallet load failed (401), retrying in ${delayMs}ms... (attempt ${retryCount + 1}/5) [Safari: ${isSafari()}]`);
+        console.log(`Wallet load failed (401), retrying in ${delayMs}ms... (attempt ${retryCount + 1}/5) [Safari: ${isSafariBrowser}]`);
         await new Promise(resolve => setTimeout(resolve, delayMs));
         return loadWallet(retryCount + 1);
       } else {
         console.error('Failed to load wallet after 5 retries - session cookie may not be set (Safari may be blocking cookies)');
-        // Initialize empty wallet so UI shows 0 instead of "—"
+        
+        // Safari FIX: Don't silently show 0 - show error message for Safari
+        if (isSafariBrowser) {
+          const walletGrid = document.getElementById('walletGrid');
+          if (walletGrid) {
+            walletGrid.innerHTML = `
+              <div class="wallet-error-message" style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: #ff6b6b;">
+                <p style="margin: 0.5rem 0; font-weight: bold;">Unable to load wallet</p>
+                <p style="margin: 0.5rem 0; font-size: 0.9rem;">Safari may be blocking cookies. Please sign out and sign in again, or try Chrome.</p>
+              </div>
+            `;
+          }
+          return;
+        }
+        
+        // For non-Safari, show zeros (graceful degradation)
         appState.wallet = { BRONZE: 0, SILVER: 0, GOLD: 0, EMERALD: 0, SAPPHIRE: 0, RUBY: 0, AMETHYST: 0, DIAMOND: 0 };
         renderWalletGrid();
         return;
@@ -1271,6 +1311,14 @@ async function callAdRewardsAPI(retryCount = 0) {
   // This is the same pattern used in loadWallet and loadFreeAttemptsStatus
   // Safari FIX: Increased delays for Safari (especially after Google OAuth login)
   if (res.status === 401) {
+    // Safari FIX: If we sent a token and got 401, token is invalid (server restarted?)
+    if (hasToken && retryCount === 0) {
+      console.warn('[WATCH_AD] Token invalid (server may have restarted) - clearing from localStorage');
+      localStorage.removeItem('authToken');
+      // Retry once without token (will use cookie if available)
+      return callAdRewardsAPI(1);
+    }
+    
     if (retryCount < 5) { // Safari FIX: Increase max retries for Safari (5 instead of 3)
       // Use longer delays for Safari cookie processing
       // Safari needs more time than Chrome to process cross-origin cookies
@@ -1440,13 +1488,50 @@ async function handleWatchAd() {
               isSafari: isSafari(),
             });
             
-            // Show user-friendly error message
-            const errorMessage = error.message || 'Something went wrong. Please try again.';
-            alert(errorMessage);
+            // Safari FIX: Check if error is from retry logic (Safari cookie message)
+            const isSafariCookieError = error.message?.includes('Safari blocked');
+            
+            // Safari FIX: If not an auth error, ticket might have been granted despite error
+            // Try to reload wallet to check if ticket was actually granted
+            if (!isSafariCookieError) {
+              console.log('[WATCH_AD] Non-auth error - checking if ticket was granted...');
+              const bronzeBefore = appState.wallet?.BRONZE || 0;
+              
+              // Reload wallet to see if ticket was granted
+              loadWallet().then(() => {
+                const bronzeAfter = appState.wallet?.BRONZE || 0;
+                if (bronzeAfter > bronzeBefore) {
+                  // Ticket was granted! Show success instead of error
+                  console.log('[WATCH_AD] Ticket was granted despite error - showing success');
+                  appendTicketActivityEntry('+1 Bronze ticket – Ad reward');
+                  alert('You earned 1 Bronze ticket!');
+                  watchAdBtn.disabled = false;
+                  watchAdBtn.textContent = 'Watch ad';
+                  return;
+                }
+                
+                // Ticket not granted - show error
+                const errorMessage = error.message || 'Something went wrong. Please try again.';
+                alert(errorMessage);
+                watchAdBtn.disabled = false;
+                watchAdBtn.textContent = 'Watch ad';
+              }).catch(walletError => {
+                // Wallet reload failed - show original error
+                console.error('[WATCH_AD] Wallet reload failed:', walletError);
+                const errorMessage = error.message || 'Something went wrong. Please try again.';
+                alert(errorMessage);
+                watchAdBtn.disabled = false;
+                watchAdBtn.textContent = 'Watch ad';
+              });
+            } else {
+              // Auth error - show error message
+              const errorMessage = error.message || 'Something went wrong. Please try again.';
+              alert(errorMessage);
 
-            // Re-enable button
-            watchAdBtn.disabled = false;
-            watchAdBtn.textContent = 'Watch ad';
+              // Re-enable button
+              watchAdBtn.disabled = false;
+              watchAdBtn.textContent = 'Watch ad';
+            }
           });
       }, 0);
     }
