@@ -933,9 +933,27 @@ async function loadWallet(retryCount = 0) {
 
   try {
     const headers = getAuthHeaders();
+    const hasToken = !!headers['X-Auth-Token'];
+    
+    // DEBUG: Log wallet request details
+    console.log(`[WALLET] Request attempt ${retryCount + 1}:`, {
+      url: `${API_BASE}/api/wallet`,
+      hasToken: hasToken,
+      isSafari: isSafari(),
+      headers: Object.keys(headers),
+    });
+    
     const res = await fetch(`${API_BASE}/api/wallet`, {
       credentials: 'include',
       headers: headers,
+    });
+    
+    // DEBUG: Log wallet response
+    console.log(`[WALLET] Response:`, {
+      status: res.status,
+      ok: res.ok,
+      statusText: res.statusText,
+      attempt: retryCount + 1,
     });
     
     // Safari FIX: Handle 401 (unauthorized) - session cookie might not be set yet (Safari ITP issue)
@@ -957,12 +975,28 @@ async function loadWallet(retryCount = 0) {
     }
     
     const data = await res.json();
+    
+    // DEBUG: Log wallet response data
+    console.log(`[WALLET] Response data:`, {
+      ok: data.ok,
+      hasWallet: !!data.wallet,
+      walletKeys: data.wallet ? Object.keys(data.wallet) : null,
+      walletValues: data.wallet ? Object.entries(data.wallet).map(([k, v]) => `${k}:${v}`).join(', ') : null,
+      error: data.error,
+      isSafari: isSafari(),
+    });
 
     if (data.ok && data.wallet) {
+      console.log(`[WALLET] Setting wallet state:`, data.wallet);
       appState.wallet = data.wallet;
       renderWalletGrid();
     } else {
-      console.error('Failed to load wallet:', data.error);
+      console.error('[WALLET] Failed to load wallet:', {
+        dataOk: data?.ok,
+        hasWallet: !!data?.wallet,
+        error: data?.error,
+        fullData: data,
+      });
       // Initialize empty wallet on error
       appState.wallet = { BRONZE: 0, SILVER: 0, GOLD: 0, EMERALD: 0, SAPPHIRE: 0, RUBY: 0, AMETHYST: 0, DIAMOND: 0 };
       renderWalletGrid();
@@ -1203,6 +1237,16 @@ async function callAdRewardsAPI(retryCount = 0) {
   }
   
   const authHeaders = getAuthHeaders();
+  const hasToken = !!authHeaders['X-Auth-Token'];
+  
+  // DEBUG: Log request details for Safari investigation
+  console.log(`[WATCH_AD] Request attempt ${retryCount + 1}:`, {
+    url: `${API_BASE}/api/rewards/ad`,
+    hasToken: hasToken,
+    isSafari: isSafari(),
+    headers: Object.keys(authHeaders),
+  });
+  
   const res = await fetch(`${API_BASE}/api/rewards/ad`, {
     method: 'POST',
     headers: {
@@ -1212,6 +1256,14 @@ async function callAdRewardsAPI(retryCount = 0) {
     credentials: 'include',
     // Safari FIX: Add cache control to prevent Safari from caching the request
     cache: 'no-store',
+  });
+  
+  // DEBUG: Log response details
+  console.log(`[WATCH_AD] Response:`, {
+    status: res.status,
+    ok: res.ok,
+    statusText: res.statusText,
+    headers: Object.fromEntries(res.headers.entries()),
   });
 
   // Safari FIX: Handle 401 (unauthorized) - session cookie might not be set yet (Safari ITP issue)
@@ -1254,6 +1306,17 @@ async function callAdRewardsAPI(retryCount = 0) {
   }
 
   const data = await res.json();
+  
+  // DEBUG: Log response data
+  console.log(`[WATCH_AD] Response data:`, {
+    ok: data.ok,
+    hasWallet: !!data.wallet,
+    walletKeys: data.wallet ? Object.keys(data.wallet) : null,
+    bronzeCount: data.wallet?.BRONZE,
+    error: data.error,
+    fullData: data,
+  });
+  
   return data;
 }
 
@@ -1324,11 +1387,22 @@ async function handleWatchAd() {
         // Call backend endpoint for ad rewards with retry logic (iOS Safari fix)
         callAdRewardsAPI()
           .then(data => {
-            if (data.ok) {
+            // DEBUG: Log success path
+            console.log(`[WATCH_AD] Success handler:`, {
+              dataOk: data?.ok,
+              hasWallet: !!data?.wallet,
+              dataType: typeof data,
+              dataKeys: data ? Object.keys(data) : null,
+            });
+            
+            if (data && data.ok) {
               // Update wallet with new balances
               if (data.wallet) {
+                console.log(`[WATCH_AD] Updating wallet:`, data.wallet);
                 appState.wallet = data.wallet;
                 renderWalletGrid();
+              } else {
+                console.warn(`[WATCH_AD] Response ok=true but no wallet in response`);
               }
 
               // Update legacy credits (deprecated)
@@ -1348,11 +1422,24 @@ async function handleWatchAd() {
               watchAdBtn.disabled = false;
               watchAdBtn.textContent = 'Watch ad';
             } else {
-              throw new Error(data.error || 'Failed to award tickets');
+              // DEBUG: Log why we're throwing error
+              console.error(`[WATCH_AD] data.ok is false or data is missing:`, {
+                data: data,
+                dataOk: data?.ok,
+                dataError: data?.error,
+              });
+              throw new Error(data?.error || 'Failed to award tickets');
             }
           })
           .catch(error => {
-            console.error('Watch ad error:', error);
+            // DEBUG: Log error details
+            console.error('[WATCH_AD] Error caught:', {
+              message: error.message,
+              stack: error.stack,
+              name: error.name,
+              isSafari: isSafari(),
+            });
+            
             // Show user-friendly error message
             const errorMessage = error.message || 'Something went wrong. Please try again.';
             alert(errorMessage);
