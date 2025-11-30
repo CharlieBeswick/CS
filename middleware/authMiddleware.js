@@ -2,28 +2,82 @@
  * Authentication middleware
  * Checks if the user has a valid session
  * 
- * TODO: In future versions, this can be enhanced with JWT verification
- * or more sophisticated session management
+ * Safari FIX: Also supports token-based auth via X-Auth-Token header
+ * This is a fallback for Safari users whose cookies are blocked by ITP
  */
 
 const prisma = require('../lib/prisma');
+const crypto = require('crypto');
+
+// In-memory token store (in production, use Redis or database)
+// Format: { token: { userId, expiresAt, createdAt } }
+const tokenStore = new Map();
+const TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+
+// Clean up expired tokens every hour
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, data] of tokenStore.entries()) {
+    if (data.expiresAt < now) {
+      tokenStore.delete(token);
+    }
+  }
+}, 60 * 60 * 1000);
+
+/**
+ * Generate a secure token for Safari users
+ */
+function generateToken(userId) {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = Date.now() + TOKEN_EXPIRY;
+  tokenStore.set(token, { userId, expiresAt, createdAt: Date.now() });
+  return token;
+}
+
+/**
+ * Verify a token and return userId
+ */
+function verifyToken(token) {
+  const data = tokenStore.get(token);
+  if (!data) return null;
+  if (data.expiresAt < Date.now()) {
+    tokenStore.delete(token);
+    return null;
+  }
+  return data.userId;
+}
 
 async function requireAuth(req, res, next) {
-  // Debug logging
-  if (!req.session) {
-    console.log('requireAuth: No session object');
-    return res.status(401).json({ ok: false, error: 'Authentication required' });
+  let userId = null;
+  
+  // Safari FIX: Check for token header first (Safari fallback)
+  const token = req.headers['x-auth-token'];
+  if (token) {
+    userId = verifyToken(token);
+    if (userId) {
+      console.log('requireAuth: Using token-based auth (Safari fallback)');
+    }
   }
   
-  if (!req.session.userId) {
-    console.log('requireAuth: No userId in session', { sessionKeys: Object.keys(req.session || {}) });
+  // Fall back to session cookie (normal flow for Chrome, etc.)
+  if (!userId && req.session && req.session.userId) {
+    userId = req.session.userId;
+    console.log('requireAuth: Using session cookie auth');
+  }
+  
+  if (!userId) {
+    console.log('requireAuth: No valid auth found', { 
+      hasToken: !!token, 
+      hasSession: !!req.session,
+      sessionUserId: req.session?.userId 
+    });
     return res.status(401).json({ ok: false, error: 'Authentication required' });
   }
   
   try {
     // Load user from database to attach to request
     const user = await prisma.user.findUnique({
-      where: { id: req.session.userId },
+      where: { id: userId },
       select: { id: true, email: true, role: true },
     });
     
@@ -47,6 +101,8 @@ function optionalAuth(req, res, next) {
 
 module.exports = {
   requireAuth,
-  optionalAuth
+  optionalAuth,
+  generateToken,
+  verifyToken,
 };
 

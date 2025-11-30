@@ -133,6 +133,10 @@ router.post('/google', async (req, res) => {
       }
     });
 
+    // Safari FIX: Generate token for Safari users (fallback when cookies are blocked)
+    const { generateToken } = require('../middleware/authMiddleware');
+    const authToken = generateToken(finalUser.id);
+
     res.json({
       ok: true,
       user: {
@@ -145,6 +149,8 @@ router.post('/google', async (req, res) => {
         credits: finalUser.credits,
         role: finalUser.role, // This should now be ADMIN if email is in whitelist
       },
+      // Safari FIX: Include token for Safari users
+      token: authToken,
     });
   } catch (error) {
     console.error('Google auth error:', error);

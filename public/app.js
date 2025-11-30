@@ -133,12 +133,27 @@ async function init() {
 }
 
 /**
+ * Get auth headers for API requests
+ * Safari FIX: Uses token from localStorage if available (fallback when cookies blocked)
+ */
+function getAuthHeaders() {
+  const headers = {};
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    headers['X-Auth-Token'] = token;
+  }
+  return headers;
+}
+
+/**
  * Check authentication status
  */
 async function checkAuth() {
   try {
+    const headers = getAuthHeaders();
     const response = await fetch(`${API_BASE}/auth/me`, {
       credentials: 'include',
+      headers: headers,
     });
     const data = await response.json();
     
@@ -148,12 +163,14 @@ async function checkAuth() {
     } else {
       // Clear any stale user state
       setCurrentUser(null);
+      localStorage.removeItem('authToken'); // Safari FIX: Clear token on auth failure
       showScreen('login');
     }
   } catch (error) {
     console.error('Auth check error:', error);
     // Clear any stale user state on error
     setCurrentUser(null);
+    localStorage.removeItem('authToken'); // Safari FIX: Clear token on error
     showScreen('login');
   }
 }
@@ -552,6 +569,12 @@ async function handleGoogleSignIn(response) {
     const data = await res.json();
     
     if (data.ok) {
+      // Safari FIX: Store token in localStorage for Safari users (fallback when cookies blocked)
+      if (data.token) {
+        localStorage.setItem('authToken', data.token);
+        console.log('Stored auth token for Safari fallback');
+      }
+      
       // iOS FIX: Wait for session cookie to be set, then verify session works
       // This is critical for iOS Safari which has cookie processing delays
       // Same pattern as email login (handleEmailLogin)
@@ -731,6 +754,7 @@ function setCurrentUser(user) {
   // Handle null user (sign out) - do this FIRST
   if (!user) {
     appState.currentUser = null;
+    localStorage.removeItem('authToken'); // Safari FIX: Clear token on sign out
     const userStatus = document.getElementById('userStatus');
     const authBadge = document.getElementById('authBadge');
     if (userStatus) userStatus.textContent = 'Guest';
@@ -987,8 +1011,10 @@ async function loadFreeAttemptsStatus(retryCount = 0) {
   if (!appState.currentUser) return;
 
   try {
+    const headers = getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/free-attempts/status`, {
       credentials: 'include',
+      headers: headers,
     });
     
     // Safari FIX: Handle 401 (unauthorized) - session cookie might not be set yet (Safari ITP issue)
@@ -1080,10 +1106,12 @@ async function handleFreeAttemptPlay() {
   playBtn.textContent = 'Playing...';
 
   try {
+    const authHeaders = getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/free-attempts/play`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...authHeaders,
       },
       credentials: 'include',
     });
@@ -1170,10 +1198,12 @@ async function callAdRewardsAPI(retryCount = 0) {
     await new Promise(resolve => setTimeout(resolve, 500));
   }
   
+  const authHeaders = getAuthHeaders();
   const res = await fetch(`${API_BASE}/api/rewards/ad`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders, // Safari FIX: Include token header
     },
     credentials: 'include',
     // Safari FIX: Add cache control to prevent Safari from caching the request
@@ -1232,8 +1262,10 @@ async function handleWatchAd() {
   // iOS FIX: Verify session is actually working before allowing Watch Ad
   // This helps catch cases where the session cookie isn't ready yet (especially after Google OAuth on iOS)
   try {
+    const authHeaders = getAuthHeaders();
     const authCheck = await fetch(`${API_BASE}/auth/me`, {
       credentials: 'include',
+      headers: authHeaders,
     });
     if (!authCheck.ok) {
       console.warn('Session verification failed before Watch Ad - user may need to sign in again');
@@ -1388,8 +1420,10 @@ async function loadWalletSummary() {
   if (!appState.currentUser) return;
 
   try {
+    const headers = getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/wallet`, {
       credentials: 'include',
+      headers: headers,
     });
     
     // If we get 401, the session might not be ready yet - retry once
@@ -1397,6 +1431,7 @@ async function loadWalletSummary() {
       await new Promise(resolve => setTimeout(resolve, 500));
       const retryRes = await fetch(`${API_BASE}/api/wallet`, {
         credentials: 'include',
+        headers: headers,
       });
       const retryData = await retryRes.json();
       if (retryData.ok && retryData.wallet) {
@@ -1649,8 +1684,10 @@ async function fetchTierLobbyState(tier = 'BRONZE', showSkeleton = false) {
       url = `${API_BASE}/api/lobbies/active?tier=${tier}`;
     }
     
+    const headers = getAuthHeaders();
     const res = await fetch(url, {
       credentials: 'include',
+      headers: headers,
     });
     const data = await res.json();
     if (data.ok) {
@@ -1686,8 +1723,10 @@ async function fetchTierLobbyChat(tier = 'BRONZE') {
   const lobby = appState.currentTierLobby || (tier === 'BRONZE' ? appState.bronzeLobby : null);
   if (!appState.currentUser || !lobby?.id) return;
   try {
+    const headers = getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/lobbies/${lobby.id}/chat`, {
       credentials: 'include',
+      headers: headers,
     });
     const data = await res.json();
     if (data.ok) {
@@ -2835,9 +2874,13 @@ async function handleBronzeChatSubmit(event) {
   const sendBtn = document.getElementById('bronzeChatSend');
   sendBtn.disabled = true;
   try {
+    const authHeaders = getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/lobbies/${lobby.id}/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
       credentials: 'include',
       body: JSON.stringify({ message }),
     });
