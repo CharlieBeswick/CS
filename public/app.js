@@ -886,8 +886,8 @@ function loadTicketsScreen() {
   
   // iOS FIX: Clean up any active watch ad countdown when loading tickets screen
   // This prevents countdown from continuing if user navigates away and comes back
-  if (watchAdCountdown) {
-    clearInterval(watchAdCountdown);
+  if (watchAdCountdown !== null) {
+    cancelAnimationFrame(watchAdCountdown);
     watchAdCountdown = null;
   }
 
@@ -1139,6 +1139,8 @@ async function handleFreeAttemptPlay() {
  * iOS FIX: Added retry logic for 401 errors (iOS Safari cookie delay issue)
  * iOS FIX: Check response status before parsing JSON to handle errors properly
  */
+// iOS FIX: Changed from setInterval ID to requestAnimationFrame ID
+// This is more reliable on iOS WebKit which throttles setInterval aggressively
 let watchAdCountdown = null;
 
 /**
@@ -1221,63 +1223,83 @@ async function handleWatchAd() {
 
   // Disable button and start countdown
   watchAdBtn.disabled = true;
-  let secondsLeft = 5;
-  watchAdBtn.textContent = `Watching… ${secondsLeft}s`;
-
-  // iOS FIX: Use setInterval with proper cleanup and error handling
-  // Note: iOS Safari may throttle timers when tab is in background, but this should
-  // still work for the 5-second countdown as long as the tab remains active
-  watchAdCountdown = setInterval(() => {
-    secondsLeft--;
+  
+  // iOS FIX: Use timestamp-based countdown instead of setInterval
+  // iOS WebKit throttles setInterval aggressively and fetch requests from timer callbacks
+  // lose the user interaction context, causing cookie-enabled requests to fail
+  // Using timestamp + requestAnimationFrame is more reliable on iOS
+  const countdownDuration = 5000; // 5 seconds in milliseconds
+  const startTime = Date.now();
+  
+  function updateCountdown() {
+    const elapsed = Date.now() - startTime;
+    const remaining = Math.max(0, countdownDuration - elapsed);
+    const secondsLeft = Math.ceil(remaining / 1000);
+    
     if (secondsLeft > 0) {
       watchAdBtn.textContent = `Watching… ${secondsLeft}s`;
+      // iOS FIX: Use requestAnimationFrame for smoother updates and better iOS compatibility
+      // This keeps the countdown responsive even if timers are throttled
+      watchAdCountdown = requestAnimationFrame(updateCountdown);
     } else {
-      clearInterval(watchAdCountdown);
-      watchAdCountdown = null;
+      // Countdown complete - stop animation
+      if (watchAdCountdown !== null) {
+        cancelAnimationFrame(watchAdCountdown);
+        watchAdCountdown = null;
+      }
+      
       watchAdBtn.textContent = 'Processing...';
 
-      // Call backend endpoint for ad rewards with retry logic (iOS Safari fix)
-      callAdRewardsAPI()
-        .then(data => {
-          if (data.ok) {
-            // Update wallet with new balances
-            if (data.wallet) {
-              appState.wallet = data.wallet;
-              renderWalletGrid();
+      // iOS FIX: Make fetch call immediately after countdown completes
+      // Using setTimeout(0) ensures we're not in a throttled timer context
+      // This helps iOS WebKit treat the fetch as part of the user interaction flow
+      setTimeout(() => {
+        // Call backend endpoint for ad rewards with retry logic (iOS Safari fix)
+        callAdRewardsAPI()
+          .then(data => {
+            if (data.ok) {
+              // Update wallet with new balances
+              if (data.wallet) {
+                appState.wallet = data.wallet;
+                renderWalletGrid();
+              }
+
+              // Update legacy credits (deprecated)
+              if (appState.currentUser) {
+                // Legacy support - keep credits in sync for now
+                const bronzeBalance = data.wallet?.BRONZE || 0;
+                appState.currentUser.credits = bronzeBalance;
+                updateTicketsBalanceUI();
+              }
+
+              appendTicketActivityEntry('+1 Bronze ticket – Ad reward');
+
+              // Show success message
+              alert('You earned 1 Bronze ticket!');
+
+              // Re-enable button
+              watchAdBtn.disabled = false;
+              watchAdBtn.textContent = 'Watch ad';
+            } else {
+              throw new Error(data.error || 'Failed to award tickets');
             }
-
-            // Update legacy credits (deprecated)
-            if (appState.currentUser) {
-              // Legacy support - keep credits in sync for now
-              const bronzeBalance = data.wallet?.BRONZE || 0;
-              appState.currentUser.credits = bronzeBalance;
-              updateTicketsBalanceUI();
-            }
-
-            appendTicketActivityEntry('+1 Bronze ticket – Ad reward');
-
-            // Show success message
-            alert('You earned 1 Bronze ticket!');
+          })
+          .catch(error => {
+            console.error('Watch ad error:', error);
+            // Show user-friendly error message
+            const errorMessage = error.message || 'Something went wrong. Please try again.';
+            alert(errorMessage);
 
             // Re-enable button
             watchAdBtn.disabled = false;
             watchAdBtn.textContent = 'Watch ad';
-          } else {
-            throw new Error(data.error || 'Failed to award tickets');
-          }
-        })
-        .catch(error => {
-          console.error('Watch ad error:', error);
-          // Show user-friendly error message
-          const errorMessage = error.message || 'Something went wrong. Please try again.';
-          alert(errorMessage);
-
-          // Re-enable button
-          watchAdBtn.disabled = false;
-          watchAdBtn.textContent = 'Watch ad';
-        });
+          });
+      }, 0);
     }
-  }, 1000);
+  }
+  
+  // Start the countdown
+  watchAdCountdown = requestAnimationFrame(updateCountdown);
 }
 
 /**

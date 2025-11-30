@@ -2,8 +2,9 @@
 
 **Date:** 2024  
 **Issue:** Watch Ad button fails on iOS devices (iPhones) while working correctly on Windows PCs and Android devices  
-**Status:** Fixed (with retry logic, session verification, and improved error handling)  
-**Update:** Additional fixes for Google OAuth users on iOS
+**Status:** Fixed (with retry logic, session verification, iOS WebKit timer fixes, and improved error handling)  
+**Update:** Additional fixes for Google OAuth users on iOS  
+**Update 2:** iOS WebKit-specific fix - replaced setInterval with requestAnimationFrame to prevent fetch requests from losing user interaction context
 
 ---
 
@@ -20,7 +21,8 @@ The "Watch Ad" feature on the My Tickets page was failing on iOS devices (specif
 2. Added session verification after Google OAuth login (same as email login)
 3. Increased retry delays for Watch Ad API calls (1000ms, 2000ms, 3000ms instead of 500ms, 1000ms, 1500ms) to accommodate Google OAuth cookie delays
 4. Added session verification check before Watch Ad API call to catch session issues early
-5. Improved error handling to check response status before parsing JSON
+5. **iOS WebKit Fix:** Replaced `setInterval` with timestamp-based countdown using `requestAnimationFrame` - iOS WebKit aggressively throttles `setInterval` and fetch requests from timer callbacks lose user interaction context, causing cookie-enabled requests to fail
+6. Improved error handling to check response status before parsing JSON
 
 ---
 
@@ -170,7 +172,46 @@ if (res.status === 401) {
 
 **Why:** Catches session issues early, especially after Google OAuth login on iOS. Better user experience than waiting through countdown only to fail.
 
-#### 4. Added Cleanup in `loadTicketsScreen()` (Lines 879-884)
+#### 4. iOS WebKit Timer Fix - Replaced setInterval with requestAnimationFrame (Lines 1227-1307)
+
+**Purpose:** Fix iOS WebKit-specific issue where fetch requests from timer callbacks lose user interaction context.
+
+**Problem:** 
+- iOS WebKit aggressively throttles `setInterval` when tabs are active or backgrounded
+- More critically, fetch requests made from `setInterval` callbacks lose the "user interaction" context
+- iOS Safari requires cookie-enabled requests (with `credentials: 'include'`) to happen within a fresh user interaction
+- After 5 seconds, the original button click is no longer considered "fresh", causing requests to fail
+
+**Solution:**
+- Replaced `setInterval` with timestamp-based countdown using `requestAnimationFrame`
+- `requestAnimationFrame` is less likely to be throttled and provides smoother updates
+- Uses `Date.now()` timestamps to calculate remaining time (more accurate than counting intervals)
+- Fetch call wrapped in `setTimeout(0)` to move execution to next event loop tick, helping iOS WebKit treat it as part of the interaction flow
+
+**Code Pattern:**
+```javascript
+// iOS FIX: Use timestamp-based countdown instead of setInterval
+// iOS WebKit throttles setInterval aggressively and fetch requests from timer callbacks
+// lose the user interaction context, causing cookie-enabled requests to fail
+const countdownDuration = 5000;
+const startTime = Date.now();
+
+function updateCountdown() {
+  const elapsed = Date.now() - startTime;
+  const remaining = Math.max(0, countdownDuration - elapsed);
+  const secondsLeft = Math.ceil(remaining / 1000);
+  
+  if (secondsLeft > 0) {
+    watchAdBtn.textContent = `Watching… ${secondsLeft}s`;
+    watchAdCountdown = requestAnimationFrame(updateCountdown);
+  } else {
+    // Countdown complete - make fetch call
+    setTimeout(() => callAdRewardsAPI(), 0);
+  }
+}
+```
+
+#### 5. Added Cleanup in `loadTicketsScreen()` (Lines 879-884)
 
 **Purpose:** Clean up any active countdown timer when navigating to/from the tickets screen.
 
@@ -254,11 +295,10 @@ if (watchAdCountdown) {
 
 ### Known Limitations
 
-1. **Timer Throttling (Low Priority)**
-   - iOS Safari throttles `setInterval` when tab is in background
-   - If user switches tabs during the 5-second countdown, the timer may be delayed
-   - **Mitigation:** The countdown is short (5 seconds) and users are unlikely to switch tabs during this time
-   - **Future Improvement:** Could use `requestAnimationFrame` or timestamp-based counting for more reliable timing, but this is likely unnecessary
+1. **Timer Throttling (Fixed)**
+   - ~~iOS Safari throttles `setInterval` when tab is in background~~ - **FIXED:** Replaced with `requestAnimationFrame` and timestamp-based counting
+   - The new implementation is more reliable on iOS and handles background tab scenarios better
+   - If user switches tabs during countdown, the timestamp-based approach ensures accuracy when they return
 
 2. **Cookie Configuration**
    - The app uses `sameSite: 'none'` for cross-origin cookies in production
