@@ -945,7 +945,8 @@ async function loadWallet(retryCount = 0) {
     });
     
     // Safari FIX: If Safari and no token, user logged in before token system
-    // Don't silently fail - show helpful message
+    // IMPORTANT: This is an AUTH FAILURE (can't load wallet), not a "0 tickets" state
+    // We show error because we can't authenticate, not because user has 0 tickets
     if (isSafariBrowser && !hasToken && retryCount === 0) {
       console.warn('[WALLET] Safari user has no token - may have logged in before token system was implemented');
       const walletGrid = document.getElementById('walletGrid');
@@ -1026,18 +1027,76 @@ async function loadWallet(retryCount = 0) {
       isSafari: isSafari(),
     });
 
+    // IMPORTANT: Distinguish between:
+    // 1. Successfully loaded wallet with 0 tickets (legitimate state - show 0)
+    // 2. Failed to load wallet (auth/network error - show error message)
+    
+    // IMPORTANT: Distinguish between two scenarios:
+    // 1. Wallet loaded successfully with 0 tickets (legitimate state) → show 0
+    // 2. Failed to load wallet (auth/network error) → show error message
+    
     if (data.ok && data.wallet) {
-      console.log(`[WALLET] Setting wallet state:`, data.wallet);
+      // Scenario 1: Successfully loaded wallet
+      // Even if all values are 0 (e.g., { BRONZE: 0, SILVER: 0, ... }), this is VALID
+      // The user legitimately has 0 tickets, not a loading error
+      // We should display 0, NOT an error message
+      console.log(`[WALLET] Successfully loaded wallet (may have 0 tickets):`, data.wallet);
       appState.wallet = data.wallet;
       renderWalletGrid();
+    } else if (res.ok && !data.ok) {
+      // Scenario 2a: HTTP 200 but backend returned ok: false (backend error)
+      // This is a LOADING FAILURE, not a "0 tickets" state
+      // We couldn't successfully load the wallet, so we don't know the actual balance
+      console.error('[WALLET] Backend returned error (loading failure, not 0 tickets):', {
+        dataOk: data?.ok,
+        error: data?.error,
+        fullData: data,
+      });
+      
+      // Safari FIX: Show error message for Safari (we don't know the balance, so don't show 0)
+      if (isSafariBrowser) {
+        const walletGrid = document.getElementById('walletGrid');
+        if (walletGrid) {
+          walletGrid.innerHTML = `
+            <div class="wallet-error-message" style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: #ff6b6b;">
+              <p style="margin: 0.5rem 0; font-weight: bold;">Unable to load wallet</p>
+              <p style="margin: 0.5rem 0; font-size: 0.9rem;">${data?.error || 'Server error. Please try again.'}</p>
+            </div>
+          `;
+        }
+        return;
+      }
+      
+      // For non-Safari, show zeros (graceful degradation - but note this is a loading failure, not actual 0)
+      appState.wallet = { BRONZE: 0, SILVER: 0, GOLD: 0, EMERALD: 0, SAPPHIRE: 0, RUBY: 0, AMETHYST: 0, DIAMOND: 0 };
+      renderWalletGrid();
     } else {
-      console.error('[WALLET] Failed to load wallet:', {
+      // Scenario 2b: Response not ok (shouldn't reach here if 401 handled above, but handle other status codes)
+      // This is also a LOADING FAILURE, not a "0 tickets" state
+      console.error('[WALLET] Unexpected response (loading failure, not 0 tickets):', {
+        status: res.status,
+        ok: res.ok,
         dataOk: data?.ok,
         hasWallet: !!data?.wallet,
         error: data?.error,
         fullData: data,
       });
-      // Initialize empty wallet on error
+      
+      // Safari FIX: Show error message for Safari (we don't know the balance, so don't show 0)
+      if (isSafariBrowser) {
+        const walletGrid = document.getElementById('walletGrid');
+        if (walletGrid) {
+          walletGrid.innerHTML = `
+            <div class="wallet-error-message" style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: #ff6b6b;">
+              <p style="margin: 0.5rem 0; font-weight: bold;">Unable to load wallet</p>
+              <p style="margin: 0.5rem 0; font-size: 0.9rem;">Please try again or sign out and sign in again.</p>
+            </div>
+          `;
+        }
+        return;
+      }
+      
+      // For non-Safari, show zeros (graceful degradation - but note this is a loading failure, not actual 0)
       appState.wallet = { BRONZE: 0, SILVER: 0, GOLD: 0, EMERALD: 0, SAPPHIRE: 0, RUBY: 0, AMETHYST: 0, DIAMOND: 0 };
       renderWalletGrid();
     }
