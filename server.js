@@ -56,7 +56,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Auth-Token'], // Safari FIX: Allow X-Auth-Token header for token-based auth fallback
   exposedHeaders: ['Content-Type'],
   preflightContinue: false,
   optionsSuccessStatus: 204,
