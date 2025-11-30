@@ -73,21 +73,35 @@ async function init() {
   // Safari FIX: Handle auth-complete redirect (token-based auth flow)
   // Check if we're on the auth-complete page with a token
   const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
+  let token = urlParams.get('token');
+  
+  // Decode token in case it was URL-encoded (shouldn't be needed but just in case)
+  if (token) {
+    try {
+      token = decodeURIComponent(token);
+    } catch (e) {
+      console.warn('[AUTH] Error decoding token from URL:', e);
+    }
+  }
   
   if (token) {
     console.log('[AUTH] Received token from redirect, storing in localStorage');
+    console.log('[AUTH] Token length:', token.length, 'Token preview:', token.substring(0, 10) + '...');
     // Store token in localStorage (first-party origin, so Safari allows it)
     localStorage.setItem('authToken', token);
     
     // Verify token works by checking auth status
     try {
       const headers = { 'X-Auth-Token': token };
+      console.log('[AUTH] Verifying token with /auth/me, headers:', Object.keys(headers));
       const response = await fetch(`${API_BASE}/auth/me`, {
         credentials: 'include',
         headers: headers,
       });
+      
+      console.log('[AUTH] /auth/me response status:', response.status, response.statusText);
       const data = await response.json();
+      console.log('[AUTH] /auth/me response data:', { ok: data.ok, hasUser: !!data.user, userEmail: data.user?.email });
       
       if (data.ok && data.user) {
         console.log('[AUTH] Token verified, user authenticated:', data.user.email);
@@ -97,12 +111,14 @@ async function init() {
         // Navigate to lobby
         showScreen('lobby');
       } else {
-        console.error('[AUTH] Token verification failed');
+        console.error('[AUTH] Token verification failed - response:', data);
+        console.error('[AUTH] Token that failed:', token.substring(0, 20) + '...');
         localStorage.removeItem('authToken');
         showScreen('login');
       }
     } catch (error) {
       console.error('[AUTH] Error verifying token:', error);
+      console.error('[AUTH] Error details:', error.message, error.stack);
       localStorage.removeItem('authToken');
       showScreen('login');
     }

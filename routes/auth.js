@@ -587,17 +587,28 @@ router.get('/me', async (req, res) => {
   // Safari FIX: Check for token header first (Safari fallback)
   const { verifyToken } = require('../middleware/authMiddleware');
   const token = req.headers['x-auth-token'];
+  
+  console.log('[AUTH] /me called:', {
+    hasToken: !!token,
+    tokenLength: token ? token.length : 0,
+    tokenPreview: token ? token.substring(0, 10) + '...' : null,
+    hasSession: !!req.session,
+    sessionUserId: req.session?.userId,
+  });
+  
   if (token) {
     userId = verifyToken(token);
     if (userId) {
-      console.log('[AUTH] /me: Using token-based auth (Safari fallback)');
+      console.log('[AUTH] /me: Using token-based auth (Safari fallback), userId:', userId);
+    } else {
+      console.log('[AUTH] /me: Token provided but verification failed - token not found in store or expired');
     }
   }
   
   // Fall back to session cookie (normal flow for Chrome, etc.)
   if (!userId && req.session && req.session.userId) {
     userId = req.session.userId;
-    console.log('[AUTH] /me: Using session cookie auth');
+    console.log('[AUTH] /me: Using session cookie auth, userId:', userId);
   }
   
   if (userId) {
@@ -607,6 +618,7 @@ router.get('/me', async (req, res) => {
       });
       
       if (user) {
+        console.log('[AUTH] /me: User found, returning user data for:', user.email);
         return res.json({
           ok: true,
           user: {
@@ -620,10 +632,14 @@ router.get('/me', async (req, res) => {
             role: user.role,
           },
         });
+      } else {
+        console.log('[AUTH] /me: User not found in database for userId:', userId);
       }
     } catch (error) {
-      console.error('Error fetching user:', error);
+      console.error('[AUTH] /me: Error fetching user:', error);
     }
+  } else {
+    console.log('[AUTH] /me: No valid userId found - returning ok: false');
   }
   
   res.json({ ok: false });

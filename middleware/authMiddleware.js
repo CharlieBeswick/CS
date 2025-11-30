@@ -38,12 +38,32 @@ function generateToken(userId) {
  * Verify a token and return userId
  */
 function verifyToken(token) {
+  if (!token) {
+    console.log('[TOKEN] verifyToken called with null/undefined token');
+    return null;
+  }
+  
+  console.log('[TOKEN] Verifying token, length:', token.length, 'preview:', token.substring(0, 10) + '...');
+  console.log('[TOKEN] Token store size:', tokenStore.size);
+  
   const data = tokenStore.get(token);
-  if (!data) return null;
+  if (!data) {
+    console.log('[TOKEN] Token not found in store');
+    // Log first few tokens in store for debugging (don't log full tokens for security)
+    if (tokenStore.size > 0) {
+      const sampleTokens = Array.from(tokenStore.keys()).slice(0, 3);
+      console.log('[TOKEN] Sample tokens in store (first 10 chars):', sampleTokens.map(t => t.substring(0, 10) + '...'));
+    }
+    return null;
+  }
+  
   if (data.expiresAt < Date.now()) {
+    console.log('[TOKEN] Token expired, expiresAt:', new Date(data.expiresAt).toISOString(), 'now:', new Date().toISOString());
     tokenStore.delete(token);
     return null;
   }
+  
+  console.log('[TOKEN] Token verified successfully, userId:', data.userId);
   return data.userId;
 }
 
