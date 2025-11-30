@@ -552,6 +552,12 @@ async function handleGoogleSignIn(response) {
     const data = await res.json();
     
     if (data.ok) {
+      // iOS FIX: Wait for session cookie to be set, then verify session works
+      // This is critical for iOS Safari which has cookie processing delays
+      // Same pattern as email login (handleEmailLogin)
+      await new Promise(resolve => setTimeout(resolve, 100));
+      // Verify session is working before proceeding
+      await checkAuth();
       setCurrentUser(data.user);
       // loadTombolas(); // Disabled - lobby redesigned
     } else {
@@ -559,6 +565,8 @@ async function handleGoogleSignIn(response) {
     }
   } catch (error) {
     console.error('Sign-in error:', error);
+    // Clear user state on error
+    setCurrentUser(null);
     errorDiv.textContent = error.message || 'Sign-in failed. Please try again.';
     errorDiv.style.display = 'block';
   }
@@ -1148,10 +1156,14 @@ async function callAdRewardsAPI(retryCount = 0) {
 
   // iOS FIX: Handle 401 (unauthorized) - session cookie might not be set yet (iOS Safari issue)
   // This is the same pattern used in loadWallet and loadFreeAttemptsStatus
+  // iOS FIX: Increased delays for Google OAuth users (1000ms, 2000ms, 3000ms instead of 500ms, 1000ms, 1500ms)
+  // iOS Safari needs more time to process cookies after Google OAuth login
   if (res.status === 401) {
     if (retryCount < 3) {
-      console.log(`Ad reward request failed (401), retrying in ${(retryCount + 1) * 500}ms... (attempt ${retryCount + 1}/3)`);
-      await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 500));
+      // Use longer delays for iOS Safari cookie processing (especially after Google OAuth)
+      const delayMs = (retryCount + 1) * 1000; // 1000ms, 2000ms, 3000ms
+      console.log(`Ad reward request failed (401), retrying in ${delayMs}ms... (attempt ${retryCount + 1}/3)`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
       return callAdRewardsAPI(retryCount + 1);
     } else {
       console.error('Failed to process ad reward after 3 retries - session cookie may not be set');
@@ -1182,6 +1194,25 @@ async function handleWatchAd() {
   if (!appState.currentUser) {
     alert('Please sign in first');
     return;
+  }
+
+  // iOS FIX: Verify session is actually working before allowing Watch Ad
+  // This helps catch cases where the session cookie isn't ready yet (especially after Google OAuth on iOS)
+  try {
+    const authCheck = await fetch(`${API_BASE}/auth/me`, {
+      credentials: 'include',
+    });
+    if (!authCheck.ok) {
+      console.warn('Session verification failed before Watch Ad - user may need to sign in again');
+      alert('Your session has expired. Please sign in again.');
+      // Clear user state and show login screen
+      setCurrentUser(null);
+      return;
+    }
+  } catch (error) {
+    console.error('Session verification error:', error);
+    // Don't block the user if verification fails - let the API call handle it
+    // But log it for debugging
   }
 
   // Watch ad button (now in My Tickets screen)

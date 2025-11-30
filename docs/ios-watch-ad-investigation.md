@@ -2,7 +2,8 @@
 
 **Date:** 2024  
 **Issue:** Watch Ad button fails on iOS devices (iPhones) while working correctly on Windows PCs and Android devices  
-**Status:** Fixed (with retry logic and improved error handling)
+**Status:** Fixed (with retry logic, session verification, and improved error handling)  
+**Update:** Additional fixes for Google OAuth users on iOS
 
 ---
 
@@ -12,7 +13,14 @@ The "Watch Ad" feature on the My Tickets page was failing on iOS devices (specif
 
 **Root Cause:** iOS Safari has known issues with cookie processing delays, especially for cross-origin requests. The Watch Ad API call (`/api/rewards/ad`) was failing with 401 (Unauthorized) errors because the session cookie wasn't being sent properly on the first request. Unlike other API calls in the app (like `loadWallet` and `loadFreeAttemptsStatus`), the Watch Ad handler had no retry logic to handle these temporary cookie delays.
 
-**Solution:** Added retry logic with exponential backoff (up to 3 retries) to handle 401 errors, matching the pattern already used successfully in other parts of the app. Also improved error handling to check response status before parsing JSON.
+**Additional Issue (Google OAuth):** After Google OAuth login on iOS, the session cookie takes even longer to process. The Google OAuth flow wasn't verifying the session after login (unlike email login), and the retry delays were too short for Google OAuth users.
+
+**Solution:** 
+1. Added retry logic with exponential backoff (up to 3 retries) to handle 401 errors, matching the pattern already used successfully in other parts of the app
+2. Added session verification after Google OAuth login (same as email login)
+3. Increased retry delays for Watch Ad API calls (1000ms, 2000ms, 3000ms instead of 500ms, 1000ms, 1500ms) to accommodate Google OAuth cookie delays
+4. Added session verification check before Watch Ad API call to catch session issues early
+5. Improved error handling to check response status before parsing JSON
 
 ---
 
@@ -101,12 +109,24 @@ The "Watch Ad" feature on the My Tickets page was failing on iOS devices (specif
 
 ### Detailed Modifications
 
-#### 1. Added `callAdRewardsAPI()` Function (Lines 1129-1172)
+#### 1. Fixed Google OAuth Login Flow (Lines 538-565)
+
+**Purpose:** Add session verification after Google OAuth login to ensure session cookie is ready before allowing user actions.
+
+**Changes:**
+- Added 100ms delay after Google OAuth login (same as email login)
+- Added `checkAuth()` call to verify session is working before proceeding
+- Added error handling to clear user state on failure
+
+**Why:** Google OAuth login on iOS Safari needs time to process the session cookie. Without verification, users could try to watch ads before the session is ready.
+
+#### 2. Added `callAdRewardsAPI()` Function (Lines 1129-1172)
 
 **Purpose:** Extract API call logic with retry mechanism to handle iOS Safari cookie delays.
 
 **Key Features:**
-- Retry logic: Up to 3 retries with exponential backoff (500ms, 1000ms, 1500ms)
+- Retry logic: Up to 3 retries with exponential backoff (1000ms, 2000ms, 3000ms)
+- **iOS FIX:** Increased delays specifically for Google OAuth users who need more time for cookie processing
 - 401 error handling: Specifically handles unauthorized errors that occur when cookies aren't ready
 - Response status checking: Checks `res.ok` before parsing JSON to prevent parsing errors
 - Better error messages: Extracts error messages from JSON responses or falls back to status text
@@ -114,11 +134,13 @@ The "Watch Ad" feature on the My Tickets page was failing on iOS devices (specif
 **Code Pattern:**
 ```javascript
 // iOS FIX: Handle 401 (unauthorized) - session cookie might not be set yet (iOS Safari issue)
-// This is the same pattern used in loadWallet and loadFreeAttemptsStatus
+// iOS FIX: Increased delays for Google OAuth users (1000ms, 2000ms, 3000ms)
+// iOS Safari needs more time to process cookies after Google OAuth login
 if (res.status === 401) {
   if (retryCount < 3) {
-    // Retry with exponential backoff
-    await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 500));
+    // Retry with longer delays for iOS Safari cookie processing
+    const delayMs = (retryCount + 1) * 1000; // 1000ms, 2000ms, 3000ms
+    await new Promise(resolve => setTimeout(resolve, delayMs));
     return callAdRewardsAPI(retryCount + 1);
   }
 }
@@ -137,7 +159,18 @@ if (res.status === 401) {
 - "iOS FIX: Check response status before parsing JSON to handle errors properly"
 - "iOS FIX: Use setInterval with proper cleanup and error handling"
 
-#### 3. Added Cleanup in `loadTicketsScreen()` (Lines 879-884)
+#### 3. Added Session Verification in `handleWatchAd()` (Lines 1199-1215)
+
+**Purpose:** Verify session is working before allowing Watch Ad API call.
+
+**Changes:**
+- Added `fetch('/auth/me')` check before starting Watch Ad flow
+- If session verification fails, show clear error and redirect to login
+- Prevents wasted countdown time if session isn't ready
+
+**Why:** Catches session issues early, especially after Google OAuth login on iOS. Better user experience than waiting through countdown only to fail.
+
+#### 4. Added Cleanup in `loadTicketsScreen()` (Lines 879-884)
 
 **Purpose:** Clean up any active countdown timer when navigating to/from the tickets screen.
 
@@ -207,6 +240,17 @@ if (watchAdCountdown) {
 ---
 
 ## Remaining Issues / Next Steps
+
+### Additional Fixes for Google OAuth Users
+
+**Problem:** After initial fix, Google OAuth users on iOS were still experiencing issues. The session cookie takes longer to process after Google OAuth login compared to email login.
+
+**Solution:**
+1. Added session verification after Google OAuth login (matching email login pattern)
+2. Increased retry delays from 500ms/1000ms/1500ms to 1000ms/2000ms/3000ms
+3. Added session verification check before Watch Ad API call
+
+**Status:** These fixes should resolve the "session expired" issue for Google OAuth users on iOS.
 
 ### Known Limitations
 
