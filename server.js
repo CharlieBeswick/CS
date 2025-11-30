@@ -101,6 +101,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Session configuration
+// Safari FIX: Safari's Intelligent Tracking Prevention (ITP) blocks cross-origin cookies aggressively
+// We need explicit sameSite: 'none' and secure: true for cross-origin cookies
 app.use(session({
   secret: process.env.SESSION_SECRET || 'crypto-tickets-secret-change-in-production',
   resave: false,
@@ -109,10 +111,17 @@ app.use(session({
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production', // Use secure cookies in production (HTTPS)
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    // Use 'none' for cross-origin cookies (Netlify frontend + Railway backend)
-    // 'lax' only works for same-site cookies
+    // Safari FIX: Use 'none' for cross-origin cookies (Netlify frontend + Railway backend)
+    // Safari requires explicit 'none' + 'secure' for cross-origin cookies
+    // 'lax' only works for same-site cookies and will be blocked by Safari ITP
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    // Safari FIX: Don't set domain explicitly - let browser handle it
+    // Setting domain explicitly can cause Safari to reject the cookie
+    // path: '/' is implicit, which is correct for cross-origin
   },
+  // Safari FIX: Ensure session is saved even if not modified
+  // This helps Safari recognize the session cookie
+  rolling: true, // Reset expiration on every request
 }));
 
 // Serve static files from public directory

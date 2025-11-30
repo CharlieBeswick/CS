@@ -910,14 +910,17 @@ async function loadWallet(retryCount = 0) {
       credentials: 'include',
     });
     
-    // Handle 401 (unauthorized) - session cookie might not be set yet (iOS Safari issue)
+    // Safari FIX: Handle 401 (unauthorized) - session cookie might not be set yet (Safari ITP issue)
+    // Safari's Intelligent Tracking Prevention blocks cross-origin cookies aggressively
     if (res.status === 401) {
-      if (retryCount < 3) {
-        console.log(`Wallet load failed (401), retrying in ${(retryCount + 1) * 500}ms... (attempt ${retryCount + 1}/3)`);
-        await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 500));
+      if (retryCount < 5) { // Safari FIX: Increase max retries for Safari
+        const baseDelay = isSafari() ? 1000 : 500; // Safari gets longer delays
+        const delayMs = baseDelay * (retryCount + 1);
+        console.log(`Wallet load failed (401), retrying in ${delayMs}ms... (attempt ${retryCount + 1}/5) [Safari: ${isSafari()}]`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
         return loadWallet(retryCount + 1);
       } else {
-        console.error('Failed to load wallet after 3 retries - session cookie may not be set');
+        console.error('Failed to load wallet after 5 retries - session cookie may not be set (Safari may be blocking cookies)');
         // Initialize empty wallet so UI shows 0 instead of "—"
         appState.wallet = { BRONZE: 0, SILVER: 0, GOLD: 0, EMERALD: 0, SAPPHIRE: 0, RUBY: 0, AMETHYST: 0, DIAMOND: 0 };
         renderWalletGrid();
@@ -988,11 +991,14 @@ async function loadFreeAttemptsStatus(retryCount = 0) {
       credentials: 'include',
     });
     
-    // Handle 401 (unauthorized) - session cookie might not be set yet (iOS Safari issue)
+    // Safari FIX: Handle 401 (unauthorized) - session cookie might not be set yet (Safari ITP issue)
+    // Safari's Intelligent Tracking Prevention blocks cross-origin cookies aggressively
     if (res.status === 401) {
-      if (retryCount < 3) {
-        console.log(`Free attempts load failed (401), retrying in ${(retryCount + 1) * 500}ms... (attempt ${retryCount + 1}/3)`);
-        await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 500));
+      if (retryCount < 5) { // Safari FIX: Increase max retries for Safari
+        const baseDelay = isSafari() ? 1000 : 500; // Safari gets longer delays
+        const delayMs = baseDelay * (retryCount + 1);
+        console.log(`Free attempts load failed (401), retrying in ${delayMs}ms... (attempt ${retryCount + 1}/5) [Safari: ${isSafari()}]`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
         return loadFreeAttemptsStatus(retryCount + 1);
       } else {
         console.error('Failed to load free attempts after 3 retries - session cookie may not be set');
@@ -1144,32 +1150,57 @@ async function handleFreeAttemptPlay() {
 let watchAdCountdown = null;
 
 /**
+ * Detect if user is on Safari (desktop or mobile)
+ * Safari has stricter cookie policies than Chrome
+ */
+function isSafari() {
+  const ua = navigator.userAgent.toLowerCase();
+  return /safari/.test(ua) && !/chrome/.test(ua) && !/chromium/.test(ua);
+}
+
+/**
  * Internal function to call the ad rewards API with retry logic
- * This addresses iOS Safari cookie processing delays that can cause 401 errors
+ * This addresses Safari cookie processing delays that can cause 401 errors
+ * Safari FIX: Safari's Intelligent Tracking Prevention blocks cross-origin cookies aggressively
  */
 async function callAdRewardsAPI(retryCount = 0) {
+  // Safari FIX: Add longer initial delay for Safari to process cookies
+  // Safari needs more time than Chrome to process cross-origin cookies
+  if (retryCount === 0 && isSafari()) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+  
   const res = await fetch(`${API_BASE}/api/rewards/ad`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     credentials: 'include',
+    // Safari FIX: Add cache control to prevent Safari from caching the request
+    cache: 'no-store',
   });
 
-  // iOS FIX: Handle 401 (unauthorized) - session cookie might not be set yet (iOS Safari issue)
+  // Safari FIX: Handle 401 (unauthorized) - session cookie might not be set yet (Safari ITP issue)
+  // Safari's Intelligent Tracking Prevention blocks cross-origin cookies aggressively
   // This is the same pattern used in loadWallet and loadFreeAttemptsStatus
-  // iOS FIX: Increased delays for Google OAuth users (1000ms, 2000ms, 3000ms instead of 500ms, 1000ms, 1500ms)
-  // iOS Safari needs more time to process cookies after Google OAuth login
+  // Safari FIX: Increased delays for Safari (especially after Google OAuth login)
   if (res.status === 401) {
-    if (retryCount < 3) {
-      // Use longer delays for iOS Safari cookie processing (especially after Google OAuth)
-      const delayMs = (retryCount + 1) * 1000; // 1000ms, 2000ms, 3000ms
-      console.log(`Ad reward request failed (401), retrying in ${delayMs}ms... (attempt ${retryCount + 1}/3)`);
+    if (retryCount < 5) { // Safari FIX: Increase max retries for Safari (5 instead of 3)
+      // Use longer delays for Safari cookie processing
+      // Safari needs more time than Chrome to process cross-origin cookies
+      const baseDelay = isSafari() ? 2000 : 1000; // Safari gets 2s base, Chrome gets 1s
+      const delayMs = baseDelay * (retryCount + 1); // 2000ms, 4000ms, 6000ms, 8000ms, 10000ms for Safari
+      console.log(`Ad reward request failed (401), retrying in ${delayMs}ms... (attempt ${retryCount + 1}/5) [Safari: ${isSafari()}]`);
       await new Promise(resolve => setTimeout(resolve, delayMs));
       return callAdRewardsAPI(retryCount + 1);
     } else {
-      console.error('Failed to process ad reward after 3 retries - session cookie may not be set');
-      throw new Error('Session expired. Please sign in again.');
+      console.error('Failed to process ad reward after 5 retries - session cookie may not be set');
+      // Safari FIX: Provide more helpful error message for Safari users
+      if (isSafari()) {
+        throw new Error('Safari blocked the session cookie. Please check Safari settings: Settings > Safari > Privacy & Security > Disable "Prevent Cross-Site Tracking" or try Chrome.');
+      } else {
+        throw new Error('Session expired. Please sign in again.');
+      }
     }
   }
 
