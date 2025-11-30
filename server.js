@@ -64,6 +64,17 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Safari FIX: Set Cross-Origin-Opener-Policy to allow popups (needed for Google OAuth)
+// This helps Safari handle OAuth popups correctly while still allowing cross-origin cookies
+app.use((req, res, next) => {
+  // Only set COOP for HTML pages, not API endpoints
+  // API endpoints should not have COOP as it can interfere with cross-origin requests
+  if (req.path.endsWith('.html') || req.path === '/' || !req.path.startsWith('/api')) {
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  }
+  next();
+});
+
 // Handle preflight requests explicitly
 app.options('*', cors(corsOptions));
 
