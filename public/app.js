@@ -264,10 +264,12 @@ function setupEventListeners() {
       }
 
       try {
+        const authHeaders = getAuthHeaders();
         const res = await fetch(`${API_BASE}/api/profile`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            ...authHeaders,
           },
           credentials: 'include',
           body: JSON.stringify({ publicName, avatarUrl }),
@@ -930,8 +932,10 @@ async function loadWallet(retryCount = 0) {
   if (!appState.currentUser) return;
 
   try {
+    const headers = getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/wallet`, {
       credentials: 'include',
+      headers: headers,
     });
     
     // Safari FIX: Handle 401 (unauthorized) - session cookie might not be set yet (Safari ITP issue)
@@ -2581,8 +2585,10 @@ async function loadHistoryScreen(force = false) {
 
   setHistoryLoading(true);
   try {
+    const headers = getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/history`, {
       credentials: 'include',
+      headers: headers,
     });
     const data = await res.json();
     if (!data.ok) {
@@ -2650,8 +2656,10 @@ async function selectHistoryGame(gameNumber) {
   appState.gameHistorySelected = gameNumber;
   renderHistoryList();
   try {
+    const headers = getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/history/${gameNumber}`, {
       credentials: 'include',
+      headers: headers,
     });
     const data = await res.json();
     if (!data.ok) {
@@ -2928,9 +2936,11 @@ async function handleSignOut() {
   }
 
   try {
+    const headers = getAuthHeaders();
     const res = await fetch(`${API_BASE}/auth/logout`, {
       method: 'POST',
       credentials: 'include',
+      headers: headers,
     });
 
     if (!res.ok) {
@@ -3181,8 +3191,10 @@ async function loadPendingWithdrawals() {
   if (!appState.currentUser) return;
 
   try {
+    const headers = getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/withdrawal/my-requests`, {
       credentials: 'include',
+      headers: headers,
     });
     
     const data = await res.json();
@@ -3575,9 +3587,13 @@ async function handleRedemptionSubmit() {
 
   // Submit withdrawal request to API
   try {
+    const authHeaders = getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/withdrawal/request`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
       credentials: 'include',
       body: JSON.stringify({
         tier: appState.redemptionTier,
@@ -3629,8 +3645,10 @@ async function loadTombolas() {
   
   /* Original code preserved for reference:
   try {
+    const headers = getAuthHeaders();
     const response = await fetch(`${API_BASE}/api/tombolas`, {
       credentials: 'include',
+      headers: headers,
     });
     
     if (!response.ok) {
@@ -3745,8 +3763,10 @@ function startCountdowns() {
 async function showTombolaDetails(tombola) {
   try {
     // Fetch full details from API
+    const headers = getAuthHeaders();
     const response = await fetch(`${API_BASE}/api/tombolas/${tombola.id}`, {
       credentials: 'include',
+      headers: headers,
     });
     
     if (!response.ok) {
@@ -3855,8 +3875,10 @@ async function loadTicketBoard(tombolaId) {
   boardEmpty.style.display = 'none';
   
   try {
+    const headers = getAuthHeaders();
     const response = await fetch(`${API_BASE}/api/tombolas/${encodeURIComponent(tombolaId)}/board`, {
       credentials: 'include',
+      headers: headers,
     });
     
     if (!response.ok) {
@@ -4009,10 +4031,12 @@ async function handleEnterDraw() {
   enterBtn.textContent = 'Entering...';
   
   try {
+    const authHeaders = getAuthHeaders();
     const response = await fetch(`${API_BASE}/api/tombolas/${encodeURIComponent(appState.activeTombolaId)}/enter`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...authHeaders,
       },
       credentials: 'include',
       body: JSON.stringify({ count: 1 }),
@@ -4094,8 +4118,10 @@ async function loadGameScoreboard(tombolaId) {
   resetGameState();
   
   try {
+    const headers = getAuthHeaders();
     const response = await fetch(`${API_BASE}/api/tombolas/${encodeURIComponent(tombolaId)}/board`, {
       credentials: 'include',
+      headers: headers,
     });
     
     if (!response.ok) {
@@ -4302,10 +4328,12 @@ function startCountdown() {
  */
 async function triggerServerDraw() {
   try {
+    const authHeaders = getAuthHeaders();
     const response = await fetch(`${API_BASE}/api/tombolas/${encodeURIComponent(appState.activeTombolaId)}/draw`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...authHeaders,
       },
       credentials: 'include',
       body: JSON.stringify({}),
