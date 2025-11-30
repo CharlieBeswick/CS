@@ -482,6 +482,91 @@ When testing on Safari, check console for:
 
 ---
 
+---
+
+## Implemented Fixes
+
+### Fix 1: Detect Missing Tokens ✅ IMPLEMENTED
+
+**File:** `public/app.js` - `loadWallet()` function
+
+**Change:** Added check for Safari users without tokens:
+- If Safari and no token → show helpful error message instead of silently showing 0
+- Prompts user to sign out and sign in again
+
+**Code:**
+```javascript
+if (isSafariBrowser && !hasToken && retryCount === 0) {
+  // Show error message instead of 0 tickets
+  walletGrid.innerHTML = `<div>Unable to load wallet on Safari. Please sign out and sign in again...</div>`;
+  return;
+}
+```
+
+### Fix 2: Clear Invalid Tokens on 401 ✅ IMPLEMENTED
+
+**File:** `public/app.js` - `loadWallet()` and `callAdRewardsAPI()` functions
+
+**Change:** Detect when token is invalid (server restarted):
+- If 401 received and we sent a token → clear token from localStorage
+- Retry once without token (will use cookie if available)
+
+**Code:**
+```javascript
+if (res.status === 401) {
+  if (hasToken && retryCount === 0) {
+    localStorage.removeItem('authToken');
+    return loadWallet(1); // Retry without token
+  }
+  // ... rest of retry logic
+}
+```
+
+### Fix 3: Better Error Handling in Watch Ad ✅ IMPLEMENTED
+
+**File:** `public/app.js` - `handleWatchAd()` function
+
+**Change:** Check if ticket was granted despite error:
+- After error, reload wallet to check if ticket count increased
+- If ticket was granted → show success message
+- If not → show error message
+
+**Code:**
+```javascript
+.catch(error => {
+  if (!isSafariCookieError) {
+    // Check if ticket was granted
+    loadWallet().then(() => {
+      if (bronzeAfter > bronzeBefore) {
+        // Ticket granted! Show success
+        alert('You earned 1 Bronze ticket!');
+      } else {
+        // Show error
+      }
+    });
+  }
+});
+```
+
+### Fix 4: Don't Silently Show 0 ✅ IMPLEMENTED
+
+**File:** `public/app.js` - `loadWallet()` function
+
+**Change:** Show error message for Safari instead of silently showing 0:
+- If Safari and 401 after retries → show error message
+- For non-Safari → still show 0 (graceful degradation)
+
+**Code:**
+```javascript
+if (isSafariBrowser) {
+  walletGrid.innerHTML = `<div>Unable to load wallet. Safari may be blocking cookies...</div>`;
+  return;
+}
+// For non-Safari, show zeros
+```
+
+---
+
 **Last Updated:** November 2024  
-**Status:** 🔍 Investigation in progress - debug logging added, fixes ready to implement
+**Status:** ✅ Fixes implemented - ready for testing
 
