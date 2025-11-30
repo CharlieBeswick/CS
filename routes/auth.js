@@ -32,7 +32,8 @@ const { createEmptyWallet } = require('../config/tickets');
  */
 router.post('/google', async (req, res) => {
   try {
-    const { credential } = req.body;
+    // Safari FIX: Accept credential from either JSON body or form-encoded body
+    const credential = req.body.credential;
 
     if (!credential) {
       return res.status(400).json({ ok: false, error: 'Missing credential' });
@@ -137,21 +138,14 @@ router.post('/google', async (req, res) => {
     const { generateToken } = require('../middleware/authMiddleware');
     const authToken = generateToken(finalUser.id);
 
-    res.json({
-      ok: true,
-      user: {
-        id: finalUser.id,
-        email: finalUser.email,
-        name: finalUser.name,
-        picture: finalUser.picture,
-        publicName: finalUser.publicName || finalUser.name,
-        avatarUrl: finalUser.avatarUrl || finalUser.picture,
-        credits: finalUser.credits,
-        role: finalUser.role, // This should now be ADMIN if email is in whitelist
-      },
-      // Safari FIX: Include token for Safari users
-      token: authToken,
-    });
+    // Safari FIX: Redirect to first-party frontend page to store token in localStorage
+    // This works around Safari's cross-origin localStorage restrictions
+    // Token is stored on cryptosnow.app domain, not in OAuth popup or backend domain
+    const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
+    const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
+    
+    console.log(`[AUTH] Redirecting to frontend with token for user ${email}`);
+    res.redirect(302, redirectUrl);
   } catch (error) {
     console.error('Google auth error:', error);
     
@@ -206,7 +200,11 @@ router.post('/google', async (req, res) => {
  */
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, fullName, dateOfBirth } = req.body;
+    // Safari FIX: Accept data from either JSON body or form-encoded body
+    const email = req.body.email;
+    const password = req.body.password;
+    const fullName = req.body.fullName;
+    const dateOfBirth = req.body.dateOfBirth;
 
     // Validation
     if (!email || !password || !fullName || !dateOfBirth) {
@@ -296,17 +294,15 @@ router.post('/register', async (req, res) => {
       },
     });
 
-    res.json({
-      ok: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        publicName: user.publicName || user.name,
-        credits: user.credits,
-        role: user.role,
-      },
-    });
+    // Safari FIX: Generate token and redirect to first-party frontend page
+    const { generateToken } = require('../middleware/authMiddleware');
+    const authToken = generateToken(user.id);
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
+    const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
+    
+    console.log(`[AUTH] Redirecting to frontend with token for user ${user.email}`);
+    res.redirect(302, redirectUrl);
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ ok: false, error: 'Registration failed' });
@@ -319,7 +315,9 @@ router.post('/register', async (req, res) => {
  */
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    // Safari FIX: Accept data from either JSON body or form-encoded body
+    const email = req.body.email;
+    const password = req.body.password;
 
     if (!email || !password) {
       return res.status(400).json({ 
@@ -375,17 +373,15 @@ router.post('/login', async (req, res) => {
       },
     });
 
-    res.json({
-      ok: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        publicName: user.publicName || user.name,
-        credits: user.credits,
-        role: user.role,
-      },
-    });
+    // Safari FIX: Generate token and redirect to first-party frontend page
+    const { generateToken } = require('../middleware/authMiddleware');
+    const authToken = generateToken(user.id);
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
+    const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
+    
+    console.log(`[AUTH] Redirecting to frontend with token for user ${user.email}`);
+    res.redirect(302, redirectUrl);
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ ok: false, error: 'Login failed' });
@@ -488,17 +484,15 @@ router.post('/register', async (req, res) => {
       },
     });
 
-    res.json({
-      ok: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        publicName: user.publicName || user.name,
-        credits: user.credits,
-        role: user.role,
-      },
-    });
+    // Safari FIX: Generate token and redirect to first-party frontend page
+    const { generateToken } = require('../middleware/authMiddleware');
+    const authToken = generateToken(user.id);
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
+    const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
+    
+    console.log(`[AUTH] Redirecting to frontend with token for user ${user.email}`);
+    res.redirect(302, redirectUrl);
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ ok: false, error: 'Registration failed' });
@@ -567,17 +561,15 @@ router.post('/login', async (req, res) => {
       },
     });
 
-    res.json({
-      ok: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        publicName: user.publicName || user.name,
-        credits: user.credits,
-        role: user.role,
-      },
-    });
+    // Safari FIX: Generate token and redirect to first-party frontend page
+    const { generateToken } = require('../middleware/authMiddleware');
+    const authToken = generateToken(user.id);
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
+    const redirectUrl = `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`;
+    
+    console.log(`[AUTH] Redirecting to frontend with token for user ${user.email}`);
+    res.redirect(302, redirectUrl);
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ ok: false, error: 'Login failed' });

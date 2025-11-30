@@ -70,6 +70,48 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
  * Initialize the application
  */
 async function init() {
+  // Safari FIX: Handle auth-complete redirect (token-based auth flow)
+  // Check if we're on the auth-complete page with a token
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+  
+  if (token) {
+    console.log('[AUTH] Received token from redirect, storing in localStorage');
+    // Store token in localStorage (first-party origin, so Safari allows it)
+    localStorage.setItem('authToken', token);
+    
+    // Verify token works by checking auth status
+    try {
+      const headers = { 'X-Auth-Token': token };
+      const response = await fetch(`${API_BASE}/auth/me`, {
+        credentials: 'include',
+        headers: headers,
+      });
+      const data = await response.json();
+      
+      if (data.ok && data.user) {
+        console.log('[AUTH] Token verified, user authenticated:', data.user.email);
+        setCurrentUser(data.user);
+        // Clean URL - remove token from address bar
+        window.history.replaceState({}, document.title, window.location.pathname);
+        // Navigate to lobby
+        showScreen('lobby');
+      } else {
+        console.error('[AUTH] Token verification failed');
+        localStorage.removeItem('authToken');
+        showScreen('login');
+      }
+    } catch (error) {
+      console.error('[AUTH] Error verifying token:', error);
+      localStorage.removeItem('authToken');
+      showScreen('login');
+    }
+    
+    // Don't continue with normal init - we've handled the auth redirect
+    setupEventListeners();
+    return;
+  }
+  
   // Set up event listeners first
   setupEventListeners();
   
@@ -553,41 +595,34 @@ function showFallbackSignInButton(container) {
 
 /**
  * Handle Google Sign-In callback (from ID token)
+ * Safari FIX: Uses redirect flow - backend redirects to auth-complete page
  */
 async function handleGoogleSignIn(response) {
   const errorDiv = document.getElementById('loginError');
   errorDiv.style.display = 'none';
   
   try {
-    const res = await fetch(`${API_BASE}/auth/google`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ credential: response.credential }),
-    });
+    // Safari FIX: Use form submission to trigger redirect (works in popups and main window)
+    // Backend will redirect to auth-complete page with token
+    // This ensures token is stored on first-party origin (cryptosnow.app)
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `${API_BASE}/auth/google`;
+    form.style.display = 'none';
+    form.enctype = 'application/x-www-form-urlencoded';
     
-    const data = await res.json();
+    const credentialInput = document.createElement('input');
+    credentialInput.type = 'hidden';
+    credentialInput.name = 'credential';
+    credentialInput.value = response.credential;
+    form.appendChild(credentialInput);
     
-    if (data.ok) {
-      // Safari FIX: Store token in localStorage for Safari users (fallback when cookies blocked)
-      if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        console.log('Stored auth token for Safari fallback');
-      }
-      
-      // iOS FIX: Wait for session cookie to be set, then verify session works
-      // This is critical for iOS Safari which has cookie processing delays
-      // Same pattern as email login (handleEmailLogin)
-      await new Promise(resolve => setTimeout(resolve, 100));
-      // Verify session is working before proceeding
-      await checkAuth();
-      setCurrentUser(data.user);
-      // loadTombolas(); // Disabled - lobby redesigned
-    } else {
-      throw new Error(data.error || 'Authentication failed');
-    }
+    document.body.appendChild(form);
+    form.submit();
+    
+    // Note: After form submission, browser will redirect to auth-complete
+    // The auth-complete handler in init() will process the token
+    // No need to handle response here - redirect will happen
   } catch (error) {
     console.error('Sign-in error:', error);
     // Clear user state on error
@@ -642,6 +677,7 @@ async function handleGoogleSignInWithToken(accessToken) {
 
 /**
  * Handle email/password login
+ * Safari FIX: Uses redirect flow - backend redirects to auth-complete page
  */
 async function handleEmailLogin(event) {
   event.preventDefault();
@@ -651,40 +687,37 @@ async function handleEmailLogin(event) {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
 
-  try {
-    const res = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await res.json();
-
-    if (data.ok) {
-      // Wait a moment for the session cookie to be set by the browser
-      await new Promise(resolve => setTimeout(resolve, 100));
-      // Verify session is working before proceeding
-      await checkAuth();
-      setCurrentUser(data.user);
-    } else {
-      // Clear any stale user state on login failure
-      setCurrentUser(null);
-      throw new Error(data.error || 'Login failed');
-    }
-  } catch (error) {
-    console.error('Login error:', error);
-    // Clear user state on error
-    setCurrentUser(null);
-    errorDiv.textContent = error.message || 'Login failed. Please try again.';
-    errorDiv.style.display = 'block';
-  }
+  // Safari FIX: Use form submission to trigger redirect
+  // Backend will redirect to auth-complete page with token
+  // This ensures token is stored on first-party origin (cryptosnow.app)
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = `${API_BASE}/auth/login`;
+  form.style.display = 'none';
+  form.enctype = 'application/x-www-form-urlencoded';
+  
+  const emailInput = document.createElement('input');
+  emailInput.type = 'hidden';
+  emailInput.name = 'email';
+  emailInput.value = email;
+  form.appendChild(emailInput);
+  
+  const passwordInput = document.createElement('input');
+  passwordInput.type = 'hidden';
+  passwordInput.name = 'password';
+  passwordInput.value = password;
+  form.appendChild(passwordInput);
+  
+  document.body.appendChild(form);
+  form.submit();
+  
+  // Note: After form submission, browser will redirect to auth-complete
+  // The auth-complete handler in init() will process the token
 }
 
 /**
  * Handle email/password registration
+ * Safari FIX: Uses redirect flow - backend redirects to auth-complete page
  */
 async function handleEmailRegister(event) {
   event.preventDefault();
@@ -703,36 +736,44 @@ async function handleEmailRegister(event) {
     return;
   }
 
-  try {
-    const res = await fetch(`${API_BASE}/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ fullName, email, dateOfBirth, password }),
-    });
-
-    const data = await res.json();
-
-    if (data.ok) {
-      // Wait a moment for the session cookie to be set by the browser
-      await new Promise(resolve => setTimeout(resolve, 100));
-      // Verify session is working before proceeding
-      await checkAuth();
-      setCurrentUser(data.user);
-    } else {
-      // Clear any stale user state on registration failure
-      setCurrentUser(null);
-      throw new Error(data.error || 'Registration failed');
-    }
-  } catch (error) {
-    console.error('Registration error:', error);
-    // Clear user state on error
-    setCurrentUser(null);
-    errorDiv.textContent = error.message || 'Registration failed. Please try again.';
-    errorDiv.style.display = 'block';
-  }
+  // Safari FIX: Use form submission to trigger redirect
+  // Backend will redirect to auth-complete page with token
+  // This ensures token is stored on first-party origin (cryptosnow.app)
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = `${API_BASE}/auth/register`;
+  form.style.display = 'none';
+  form.enctype = 'application/x-www-form-urlencoded';
+  
+  const fullNameInput = document.createElement('input');
+  fullNameInput.type = 'hidden';
+  fullNameInput.name = 'fullName';
+  fullNameInput.value = fullName;
+  form.appendChild(fullNameInput);
+  
+  const emailInput = document.createElement('input');
+  emailInput.type = 'hidden';
+  emailInput.name = 'email';
+  emailInput.value = email;
+  form.appendChild(emailInput);
+  
+  const dateOfBirthInput = document.createElement('input');
+  dateOfBirthInput.type = 'hidden';
+  dateOfBirthInput.name = 'dateOfBirth';
+  dateOfBirthInput.value = dateOfBirth;
+  form.appendChild(dateOfBirthInput);
+  
+  const passwordInput = document.createElement('input');
+  passwordInput.type = 'hidden';
+  passwordInput.name = 'password';
+  passwordInput.value = password;
+  form.appendChild(passwordInput);
+  
+  document.body.appendChild(form);
+  form.submit();
+  
+  // Note: After form submission, browser will redirect to auth-complete
+  // The auth-complete handler in init() will process the token
 }
 
 /**
@@ -992,21 +1033,19 @@ async function loadWallet(retryCount = 0) {
         await new Promise(resolve => setTimeout(resolve, delayMs));
         return loadWallet(retryCount + 1);
       } else {
-        console.error('Failed to load wallet after 5 retries - session cookie may not be set (Safari may be blocking cookies)');
+        console.error('Failed to load wallet after 5 retries - authentication failed');
         
-        // Safari FIX: Don't silently show 0 - show error message for Safari
-        if (isSafariBrowser) {
-          const walletGrid = document.getElementById('walletGrid');
-          if (walletGrid) {
-            walletGrid.innerHTML = `
-              <div class="wallet-error-message" style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: #ff6b6b;">
-                <p style="margin: 0.5rem 0; font-weight: bold;">Unable to load wallet</p>
-                <p style="margin: 0.5rem 0; font-size: 0.9rem;">Safari may be blocking cookies. Please sign out and sign in again, or try Chrome.</p>
-              </div>
-            `;
-          }
-          return;
+        // Safari FIX: Show accurate error message - login expired or didn't complete
+        const walletGrid = document.getElementById('walletGrid');
+        if (walletGrid) {
+          walletGrid.innerHTML = `
+            <div class="wallet-error-message" style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: #ff6b6b;">
+              <p style="margin: 0.5rem 0; font-weight: bold;">Unable to load wallet</p>
+              <p style="margin: 0.5rem 0; font-size: 0.9rem;">Your login has expired or didn't complete correctly. Please sign in again.</p>
+            </div>
+          `;
         }
+        return;
         
         // For non-Safari, show zeros (graceful degradation)
         appState.wallet = { BRONZE: 0, SILVER: 0, GOLD: 0, EMERALD: 0, SAPPHIRE: 0, RUBY: 0, AMETHYST: 0, DIAMOND: 0 };
@@ -1164,8 +1203,9 @@ async function loadFreeAttemptsStatus(retryCount = 0) {
         await new Promise(resolve => setTimeout(resolve, delayMs));
         return loadFreeAttemptsStatus(retryCount + 1);
       } else {
-        console.error('Failed to load free attempts after 3 retries - session cookie may not be set');
+        console.error('Failed to load free attempts after 5 retries - authentication failed');
         // Initialize default status so UI shows "0" instead of "Loading"
+        // User should sign in again to get accurate status
         appState.freeAttemptsStatus = { remainingAttempts: 0, usedToday: 0, maxPerDay: 3 };
         updateFreeAttemptsUI();
         return;
@@ -1387,12 +1427,12 @@ async function callAdRewardsAPI(retryCount = 0) {
       await new Promise(resolve => setTimeout(resolve, delayMs));
       return callAdRewardsAPI(retryCount + 1);
     } else {
-      console.error('Failed to process ad reward after 5 retries - session cookie may not be set');
-      // Safari FIX: Provide more helpful error message for Safari users
-      if (isSafari()) {
-        throw new Error('Safari blocked the session cookie. Please check Safari settings: Settings > Safari > Privacy & Security > Disable "Prevent Cross-Site Tracking" or try Chrome.');
+      console.error('Failed to process ad reward after 5 retries - authentication failed');
+      // Safari FIX: Provide accurate error message - token may be missing or invalid
+      if (!hasToken) {
+        throw new Error('Your login has expired or didn\'t complete correctly. Please sign in again.');
       } else {
-        throw new Error('Session expired. Please sign in again.');
+        throw new Error('Authentication failed. Please sign in again.');
       }
     }
   }
@@ -1547,12 +1587,14 @@ async function handleWatchAd() {
               isSafari: isSafari(),
             });
             
-            // Safari FIX: Check if error is from retry logic (Safari cookie message)
-            const isSafariCookieError = error.message?.includes('Safari blocked');
+            // Safari FIX: Check if error is an authentication error
+            const isAuthError = error.message?.includes('login has expired') || 
+                               error.message?.includes('Authentication failed') ||
+                               error.message?.includes('sign in again');
             
             // Safari FIX: If not an auth error, ticket might have been granted despite error
             // Try to reload wallet to check if ticket was actually granted
-            if (!isSafariCookieError) {
+            if (!isAuthError) {
               console.log('[WATCH_AD] Non-auth error - checking if ticket was granted...');
               const bronzeBefore = appState.wallet?.BRONZE || 0;
               
