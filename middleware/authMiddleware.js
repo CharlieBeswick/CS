@@ -59,6 +59,11 @@ async function generateToken(userId) {
     return token;
   } catch (error) {
     console.error('[TOKEN] ERROR: Failed to store token in database:', error);
+    // Check if it's a "relation does not exist" error (table not created yet)
+    if (error.message && error.message.includes('does not exist')) {
+      console.error('[TOKEN] CRITICAL: AuthToken table does not exist! Migration may not have run.');
+      console.error('[TOKEN] Please check Railway logs and ensure migration ran successfully.');
+    }
     throw error;
   }
 }
@@ -97,6 +102,11 @@ async function verifyToken(token) {
     return authToken.userId;
   } catch (error) {
     console.error('[TOKEN] Error verifying token from database:', error);
+    // Check if it's a "relation does not exist" error (table not created yet)
+    if (error.message && error.message.includes('does not exist')) {
+      console.error('[TOKEN] CRITICAL: AuthToken table does not exist! Migration may not have run.');
+      console.error('[TOKEN] Please check Railway logs and ensure migration ran successfully.');
+    }
     return null;
   }
 }
