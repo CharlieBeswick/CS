@@ -783,9 +783,25 @@ router.get('/debug-token-store', async (req, res) => {
 
 /**
  * POST /auth/logout
- * Destroys the user session
+ * Destroys the user session and invalidates auth token
+ * Safari FIX: Also deletes the auth token from database if provided
  */
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
+  // Safari FIX: If token is provided, delete it from database
+  const token = req.headers['x-auth-token'];
+  if (token) {
+    try {
+      const prisma = require('../lib/prisma');
+      await prisma.authToken.deleteMany({
+        where: { token },
+      });
+      console.log('[AUTH] Logout: Deleted token from database');
+    } catch (error) {
+      console.error('[AUTH] Logout: Error deleting token:', error);
+      // Don't fail logout if token deletion fails
+    }
+  }
+  
   // Clear session data first
   if (req.session) {
     req.session.userId = null;

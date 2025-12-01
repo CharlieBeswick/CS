@@ -815,14 +815,18 @@ function setupSignOutHandler(emailEl) {
   // Confirm button
   confirmBtn.addEventListener('click', async () => {
     try {
+      const headers = getAuthHeaders();
       const response = await fetch(`${API_BASE}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
+        headers: headers,
       });
       
       const data = await response.json();
       
       if (data.ok) {
+        // Safari FIX: Clear token from localStorage before redirect
+        localStorage.removeItem('authToken');
         // Redirect to home page
         window.location.href = '/';
       } else {

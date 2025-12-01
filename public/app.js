@@ -3279,6 +3279,10 @@ async function handleSignOut() {
       appState.wallet = null;
       appState.freeAttemptsStatus = null;
       
+      // Safari FIX: Clear token from localStorage BEFORE reload
+      // Otherwise checkAuth() will find the token and auto-login the user
+      localStorage.removeItem('authToken');
+      
       // Force a hard reload to clear all state and ensure clean logout
       // Do this BEFORE calling setUser to avoid null reference errors
       window.location.href = '/';
