@@ -1140,6 +1140,65 @@ function setupUsersSearch() {
   }
 }
 
+/**
+ * Setup reset all tickets button handler
+ */
+function setupResetAllTicketsButton() {
+  const resetBtn = document.getElementById('admin-reset-all-tickets-btn');
+  if (!resetBtn) return;
+  
+  // Remove existing listener if any (to prevent duplicates)
+  const newResetBtn = resetBtn.cloneNode(true);
+  resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
+  
+  newResetBtn.addEventListener('click', async () => {
+    const confirmed = confirm(
+      '⚠️ WARNING: This will reset ALL player tickets to 0.\n\n' +
+      'This action cannot be undone. All ticket wallets will be cleared.\n\n' +
+      'Are you absolutely sure you want to proceed?'
+    );
+    
+    if (!confirmed) return;
+    
+    // Double confirmation
+    const doubleConfirmed = confirm(
+      '⚠️ FINAL CONFIRMATION\n\n' +
+      'You are about to delete ALL tickets from ALL players.\n\n' +
+      'This will set every player\'s ticket wallet to 0.\n\n' +
+      'Click OK to proceed, or Cancel to abort.'
+    );
+    
+    if (!doubleConfirmed) return;
+    
+    try {
+      newResetBtn.disabled = true;
+      newResetBtn.textContent = 'Resetting...';
+      
+      const headers = getAuthHeaders();
+      const res = await fetch(`${API_BASE}/api/admin/reset-all-tickets`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: headers,
+      });
+      
+      const data = await res.json();
+      
+      if (data.ok) {
+        alert('✅ All tickets have been reset to 0.\n\nReloading users list...');
+        await loadAdminUsers();
+      } else {
+        alert(`❌ Error: ${data.error || 'Failed to reset tickets'}`);
+      }
+    } catch (error) {
+      console.error('Error resetting tickets:', error);
+      alert(`❌ Error: ${error.message}`);
+    } finally {
+      newResetBtn.disabled = false;
+      newResetBtn.textContent = 'Reset All Tickets';
+    }
+  });
+}
+
 function renderAdminUsers() {
   const container = document.getElementById('adminUsersList');
   if (!container) return;
