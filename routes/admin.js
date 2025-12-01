@@ -1235,5 +1235,54 @@ router.post('/users/:id/add-tickets', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/admin/reset-all-tickets
+ * Reset all player tickets to 0 (destructive action)
+ * Auth: required, Admin only
+ */
+router.post('/reset-all-tickets', async (req, res) => {
+  try {
+    // Get all users
+    const allUsers = await prisma.user.findMany({
+      select: { id: true },
+    });
+    
+    // Reset all ticket wallets to empty
+    const emptyWallet = {
+      BRONZE: 0,
+      SILVER: 0,
+      GOLD: 0,
+      EMERALD: 0,
+      SAPPHIRE: 0,
+      RUBY: 0,
+      AMETHYST: 0,
+      DIAMOND: 0,
+    };
+    
+    // Update all users in parallel
+    await Promise.all(
+      allUsers.map(user =>
+        prisma.user.update({
+          where: { id: user.id },
+          data: { ticketWallet: emptyWallet },
+        })
+      )
+    );
+    
+    res.json({
+      ok: true,
+      message: `Reset tickets for ${allUsers.length} users`,
+      usersAffected: allUsers.length,
+    });
+  } catch (error) {
+    console.error('[ADMIN] Error resetting all tickets:', error);
+    res.status(500).json({
+      ok: false,
+      error: 'Failed to reset tickets',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+});
+
 module.exports = router;
 

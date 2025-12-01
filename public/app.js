@@ -1684,8 +1684,9 @@ function renderPlayerInfo() {
   const displayName = user.publicName || user.name || 'Anonymous';
   html += `<p class="info-card-player-name">${displayName}</p>`;
   
-  // Player number (user ID)
-  html += `<p class="info-card-player-detail">Player #<strong>${user.id || 'N/A'}</strong></p>`;
+  // Player number (calculated player number, not user ID)
+  const playerNumber = user.playerNumber || 'N/A';
+  html += `<p class="info-card-player-detail">Player #<strong>${playerNumber}</strong></p>`;
   
   // Player level (hardcoded to Level 1 for now)
   html += `<p class="info-card-player-detail">Level <strong>1</strong></p>`;

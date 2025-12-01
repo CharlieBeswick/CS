@@ -1118,6 +1118,7 @@ async function loadAdminUsers() {
       adminUsers = data.users;
       renderAdminUsers();
       setupUsersSearch();
+      setupResetAllTicketsButton();
     } else {
       document.getElementById('adminUsersList').innerHTML = 
         `<div class="admin-error">Failed to load users: ${data.error || 'Unknown error'}</div>`;

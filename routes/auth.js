@@ -510,6 +510,35 @@ router.get('/me', async (req, res) => {
       });
       
       if (user) {
+        // Calculate player number (same logic as admin panel)
+        const allUsers = await prisma.user.findMany({
+          orderBy: { createdAt: 'asc' },
+          select: { id: true, email: true },
+        });
+        
+        let playerNumber = 1;
+        const cmbictUser = allUsers.find(u => u.email === 'cmbict@gmail.com');
+        
+        if (cmbictUser && cmbictUser.id === userId) {
+          playerNumber = 1;
+        } else {
+          let currentNumber = 1;
+          for (const u of allUsers) {
+            if (u.email === 'cmbict@gmail.com') {
+              if (u.id === userId) {
+                playerNumber = 1;
+                break;
+              }
+              continue;
+            }
+            currentNumber++;
+            if (u.id === userId) {
+              playerNumber = currentNumber;
+              break;
+            }
+          }
+        }
+        
         console.log('[AUTH] /me: User found, returning user data for:', user.email);
         return res.json({
           ok: true,
@@ -519,6 +548,7 @@ router.get('/me', async (req, res) => {
             name: user.name,
             picture: user.picture,
             publicName: user.publicName || user.name,
+            playerNumber: playerNumber,
             avatarUrl: user.avatarUrl || user.picture,
             credits: user.credits,
             role: user.role,
