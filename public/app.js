@@ -1661,7 +1661,9 @@ function renderWalletSummary(showPlaceholder = false) {
   const stripContainer = document.getElementById('ticketStrip');
   if (!stripContainer) return;
 
-  const tiers = ['BRONZE', 'SILVER', 'GOLD', 'EMERALD', 'SAPPHIRE', 'RUBY', 'AMETHYST', 'DIAMOND'];
+  // Exclude AMETHYST and DIAMOND from home page display (they're extremely rare)
+  // These tiers are still visible in "My Tickets" page via renderWalletGrid()
+  const tiers = ['BRONZE', 'SILVER', 'GOLD', 'EMERALD', 'SAPPHIRE', 'RUBY'];
 
   stripContainer.innerHTML = '';
 
