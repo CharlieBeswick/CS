@@ -299,7 +299,7 @@ async function loadWithdrawals() {
 
     // Load withdrawals
     const filter = currentWithdrawalFilter === 'all' ? '' : `?status=${currentWithdrawalFilter}`;
-    const headers = getAuthHeaders();
+    headers = getAuthHeaders(); // Reuse headers variable from above
     const res = await fetch(`${API_BASE}/api/admin/withdrawals${filter}`, {
       credentials: 'include',
       headers: headers,
