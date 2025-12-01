@@ -3334,6 +3334,158 @@ body {
   text-align: center;
 }
 
+/* Info Cards Row */
+.info-cards-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+@media (max-width: 600px) {
+  .info-cards-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* Info Card Base Styles */
+.info-card {
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 14px 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Avatar Card - Green Neon Border */
+.info-card-avatar {
+  border-color: rgba(0, 255, 0, 0.4);
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.2);
+}
+
+.info-card-avatar:hover {
+  border-color: rgba(0, 255, 0, 0.6);
+  box-shadow: 0 0 12px rgba(0, 255, 0, 0.4);
+}
+
+.info-card-placeholder-text {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 0;
+  padding: 20px 0;
+}
+
+/* Info Card Content */
+.info-card-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.info-card-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Player Info Card */
+.info-card-player-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.info-card-player-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-neon);
+  object-fit: cover;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
+}
+
+.info-card-player-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  margin: 0;
+}
+
+.info-card-player-detail {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin: 0;
+}
+
+.info-card-player-detail strong {
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+
+/* Game Stats Card */
+.info-card-stats-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-card-stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-card-stat-item:last-child {
+  border-bottom: none;
+}
+
+.info-card-stat-label {
+  color: var(--text-secondary);
+}
+
+.info-card-stat-value {
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+
+.info-card-stat-loading {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-style: italic;
+  padding: 10px 0;
+}
+
+.info-card-stat-unavailable {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-style: italic;
+  padding: 10px 0;
+}
+
 /* Wallet Summary (compact) */
 /* Ticket Strip - Arcade-style horizontal ticket stubs */
 .ticket-strip {

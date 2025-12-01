@@ -67,6 +67,36 @@
       <!-- Lobby Screen (shown when authenticated) -->
       <div class="screen lobby-screen" id="lobbyScreen" style="display: none;">
         <div class="lobby-content">
+          <!-- Info Cards Row -->
+          <div class="info-cards-row" id="infoCardsRow">
+            <!-- Card 1: Avatar Placeholder -->
+            <div class="info-card info-card-avatar">
+              <div class="info-card-content">
+                <p class="info-card-placeholder-text">avatar</p>
+              </div>
+            </div>
+            
+            <!-- Card 2: Player Info -->
+            <div class="info-card info-card-player">
+              <div class="info-card-content">
+                <h4 class="info-card-title">Player Info</h4>
+                <div class="info-card-player-content" id="playerInfoContent">
+                  <!-- Will be populated by JavaScript -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- Card 3: Game Stats -->
+            <div class="info-card info-card-stats">
+              <div class="info-card-content">
+                <h4 class="info-card-title">Game Stats</h4>
+                <div class="info-card-stats-content" id="gameStatsContent">
+                  <!-- Will be populated by JavaScript -->
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Your Tickets Strip (arcade-style horizontal) -->
           <div class="ticket-strip" id="ticketStrip">
             <!-- Tier ticket stubs will be rendered here by JavaScript -->

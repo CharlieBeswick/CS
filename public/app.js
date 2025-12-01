@@ -747,6 +747,9 @@ function setCurrentUser(user) {
   // iOS Safari can be slow to process cross-origin cookies
   setTimeout(() => {
     loadWallet();
+    // Render player info and game stats when wallet loads
+    renderPlayerInfo();
+    loadGameStats();
   }, 500); // Increased delay for iOS Safari cookie processing
 
   // Update balance UI (legacy - deprecated)
@@ -1587,6 +1590,9 @@ async function handleWatchAdLegacy() {
  * Load lobby content (wallet summary and tier game buttons)
  */
 async function loadLobbyContent() {
+  // Render player info and game stats when lobby loads
+  renderPlayerInfo();
+  loadGameStats();
   if (!appState.currentUser) return;
 
   // Load wallet summary
@@ -1651,6 +1657,98 @@ async function loadWalletSummary() {
     }
     renderWalletSummary(false); // Show 0 instead of "—"
     renderTierGameButtons(); // Re-render tier buttons when wallet loads
+  }
+}
+
+/**
+ * Render player info card
+ */
+function renderPlayerInfo() {
+  const playerInfoContent = document.getElementById('playerInfoContent');
+  if (!playerInfoContent || !appState.currentUser) return;
+  
+  const user = appState.currentUser;
+  
+  // TODO: Replace avatar placeholder with actual avatar system.
+  // TODO: Implement real player level progression later.
+  
+  let html = '';
+  
+  // Player avatar
+  const avatarUrl = user.avatarUrl || user.picture || '';
+  if (avatarUrl) {
+    html += `<img src="${avatarUrl}" alt="Player avatar" class="info-card-player-avatar" />`;
+  }
+  
+  // Player display name
+  const displayName = user.publicName || user.name || 'Anonymous';
+  html += `<p class="info-card-player-name">${displayName}</p>`;
+  
+  // Player number (user ID)
+  html += `<p class="info-card-player-detail">Player #<strong>${user.id || 'N/A'}</strong></p>`;
+  
+  // Player level (hardcoded to Level 1 for now)
+  html += `<p class="info-card-player-detail">Level <strong>1</strong></p>`;
+  
+  playerInfoContent.innerHTML = html;
+}
+
+/**
+ * Load and display game stats from admin API
+ */
+async function loadGameStats() {
+  const gameStatsContent = document.getElementById('gameStatsContent');
+  if (!gameStatsContent) return;
+  
+  // Show loading state
+  gameStatsContent.innerHTML = '<p class="info-card-stat-loading">Loading...</p>';
+  
+  try {
+    const headers = getAuthHeaders();
+    const res = await fetch(`${API_BASE}/api/admin/summary`, {
+      credentials: 'include',
+      headers: headers,
+    });
+    
+    if (!res.ok) {
+      // If unauthorized or forbidden, show unavailable
+      if (res.status === 401 || res.status === 403) {
+        gameStatsContent.innerHTML = '<p class="info-card-stat-unavailable">Unavailable</p>';
+        return;
+      }
+      throw new Error(`HTTP ${res.status}`);
+    }
+    
+    const data = await res.json();
+    
+    if (!data.ok) {
+      throw new Error(data.error || 'Failed to load stats');
+    }
+    
+    // Calculate total tickets generated (sum of all ticket tiers)
+    const totalTickets = data.ticketCounts ? 
+      Object.values(data.ticketCounts).reduce((sum, count) => sum + (count || 0), 0) : 
+      data.totalAdsViewed || 0;
+    
+    // Render stats
+    let html = '';
+    html += `<div class="info-card-stat-item">
+      <span class="info-card-stat-label">Total Accounts</span>
+      <span class="info-card-stat-value">${data.totalPlayers || 0}</span>
+    </div>`;
+    html += `<div class="info-card-stat-item">
+      <span class="info-card-stat-label">Tickets Generated</span>
+      <span class="info-card-stat-value">${totalTickets.toLocaleString()}</span>
+    </div>`;
+    html += `<div class="info-card-stat-item">
+      <span class="info-card-stat-label">Online Players</span>
+      <span class="info-card-stat-value">${data.livePlayers || 0}</span>
+    </div>`;
+    
+    gameStatsContent.innerHTML = html;
+  } catch (error) {
+    console.warn('Failed to load game stats:', error);
+    gameStatsContent.innerHTML = '<p class="info-card-stat-unavailable">Unavailable</p>';
   }
 }
 
