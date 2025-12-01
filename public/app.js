@@ -1825,48 +1825,48 @@ function createTier1GameButton(gameName, isPlaceholder, gameId) {
   const gameWrapper = document.createElement('div');
   gameWrapper.className = 'tier1-game-wrapper';
   
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = isPlaceholder ? 'tier-game-btn tier-game-btn-disabled' : 'tier-game-btn';
-  button.disabled = isPlaceholder;
+  // Game title above the button
+  const gameTitle = document.createElement('h4');
+  gameTitle.className = 'tier1-game-title';
+  gameTitle.textContent = gameName;
   
-  // Button content with info icon for placeholders
-  const buttonContent = document.createElement('div');
-  buttonContent.className = 'tier-game-btn-content';
-  
-  const buttonText = document.createElement('span');
-  buttonText.className = 'tier-game-btn-text';
-  if (gameName === 'Lucky Wheel') {
-    buttonText.textContent = 'ENTER TIER 1 GAME (BRONZE → SILVER)';
-  } else {
-    buttonText.textContent = gameName;
-  }
-  
-  buttonContent.appendChild(buttonText);
-  
-  // Add info icon for placeholder games
+  // Info icon next to title for placeholders
   if (isPlaceholder && gameId) {
+    const titleWrapper = document.createElement('div');
+    titleWrapper.className = 'tier1-game-title-wrapper';
+    titleWrapper.appendChild(gameTitle);
+    
     const infoIcon = document.createElement('span');
     infoIcon.className = 'tier-game-info-icon';
     infoIcon.textContent = '?';
     infoIcon.setAttribute('data-game-id', gameId);
     infoIcon.setAttribute('aria-label', `Info about ${gameName}`);
-    buttonContent.appendChild(infoIcon);
+    titleWrapper.appendChild(infoIcon);
+    
+    gameWrapper.appendChild(titleWrapper);
+  } else {
+    gameWrapper.appendChild(gameTitle);
   }
   
-  button.appendChild(buttonContent);
+  // Button with consistent text
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = isPlaceholder ? 'tier-game-btn tier-game-btn-disabled' : 'tier-game-btn';
+  button.disabled = isPlaceholder;
+  button.textContent = 'Enter tier 1 game';
   
   // Add click handler for active button
   if (!isPlaceholder) {
     button.addEventListener('click', () => handleTierGameClick(1));
   }
   
+  gameWrapper.appendChild(button);
+  
   // Add "Game under development" text for placeholders
   if (isPlaceholder) {
     const devText = document.createElement('p');
     devText.className = 'tier-game-dev-text';
     devText.textContent = 'Game under development';
-    gameWrapper.appendChild(button);
     gameWrapper.appendChild(devText);
     
     // Add expandable info panel
@@ -1884,8 +1884,6 @@ function createTier1GameButton(gameName, isPlaceholder, gameId) {
     `;
     infoPanel.appendChild(infoContent);
     gameWrapper.appendChild(infoPanel);
-  } else {
-    gameWrapper.appendChild(button);
   }
   
   return gameWrapper;
