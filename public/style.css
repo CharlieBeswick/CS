@@ -3711,3 +3711,105 @@ body {
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* Tier 1 Game Wrapper */
+.tier1-game-wrapper {
+  margin-bottom: 12px;
+}
+
+.tier1-game-wrapper:last-child {
+  margin-bottom: 0;
+}
+
+/* Tier Game Button Content (for flex layout with info icon) */
+.tier-game-btn-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
+.tier-game-btn-text {
+  flex: 1;
+  text-align: center;
+}
+
+/* Tier Game Info Icon */
+.tier-game-info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.tier-game-info-icon:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: var(--accent-neon);
+  transform: scale(1.1);
+}
+
+.tier-game-info-icon[aria-expanded="true"] {
+  background: var(--accent-neon);
+  color: var(--bg-dark);
+  border-color: var(--accent-neon);
+}
+
+/* Game Under Development Text */
+.tier-game-dev-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 6px;
+  margin-bottom: 0;
+  font-style: italic;
+}
+
+/* Tier Game Info Panel (expandable dropdown) */
+.tier-game-info-panel {
+  margin-top: 10px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  animation: slideDown 0.3s ease-out;
+}
+
+.tier-game-info-panel[hidden] {
+  display: none;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tier-game-info-content {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.tier-game-info-content p {
+  margin: 0 0 10px 0;
+}
+
+.tier-game-info-content p:last-child {
+  margin-bottom: 0;
+}
+

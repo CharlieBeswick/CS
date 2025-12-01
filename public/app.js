@@ -1739,6 +1739,7 @@ function renderTierLadder() {
  * Render tier game buttons (Tier 1-7)
  * Note: Tier 8 (Diamond) is the final tier - no games beyond it
  * Only shows buttons for tiers the player has tickets for
+ * Tier 1 Games section includes Lucky Wheel (active) + 3 placeholder games
  */
 function renderTierGameButtons() {
   const buttonsContainer = document.getElementById('tierGameButtons');
@@ -1760,8 +1761,29 @@ function renderTierGameButtons() {
   // Get wallet balances
   const wallet = appState.wallet || {};
   
-  // Tier 1-7 buttons (Tier 8/Diamond is the final tier, no games beyond it)
-  for (let tierNum = 1; tierNum <= 7; tierNum++) {
+  // Tier 1 Games: Always show Lucky Wheel button if player has Bronze tickets
+  const bronzeBalance = wallet['BRONZE'] || 0;
+  if (bronzeBalance > 0) {
+    const luckyWheelButton = createTier1GameButton('Lucky Wheel', false, null);
+    buttonsContainer.appendChild(luckyWheelButton);
+  }
+  
+  // Add three placeholder game buttons (disabled)
+  // TODO: Replace greyed-out game buttons with active join logic after implementing their game engines
+  // TODO: Connect each new game button to backend lobby creation endpoints once available
+  const placeholderGames = [
+    { name: 'The Short Straw', id: 'short-straw' },
+    { name: 'Hot Number', id: 'hot-number' },
+    { name: 'Undefined', id: 'undefined' }
+  ];
+  
+  placeholderGames.forEach(game => {
+    const placeholderButton = createTier1GameButton(game.name, true, game.id);
+    buttonsContainer.appendChild(placeholderButton);
+  });
+  
+  // Tier 2-7 buttons (only show if player has tickets for that tier)
+  for (let tierNum = 2; tierNum <= 7; tierNum++) {
     const metadata = tierMetadata[tierNum];
     const requiredTier = metadata.tier;
     const ticketBalance = wallet[requiredTier] || 0;
@@ -1778,16 +1800,122 @@ function renderTierGameButtons() {
     }
   }
   
-  // Show message if no buttons are available
-  if (buttonsContainer.children.length === 0) {
+  // Show message if no buttons are available (only for tiers 2+)
+  if (bronzeBalance === 0 && buttonsContainer.children.length === placeholderGames.length) {
     const message = document.createElement('p');
     message.className = 'tier-games-empty';
     message.textContent = 'You need tickets to enter tier games. Watch ads or play free games to earn Bronze tickets!';
     message.style.textAlign = 'center';
     message.style.color = 'var(--muted)';
     message.style.padding = '1rem';
-    buttonsContainer.appendChild(message);
+    buttonsContainer.insertBefore(message, buttonsContainer.firstChild);
   }
+  
+  // Initialize info panel toggles for placeholder games
+  initializeTier1GameInfoPanels();
+}
+
+/**
+ * Create a Tier 1 game button (either active Lucky Wheel or placeholder)
+ * @param {string} gameName - Name of the game
+ * @param {boolean} isPlaceholder - Whether this is a placeholder (disabled)
+ * @param {string|null} gameId - Unique ID for placeholder games (for info panel)
+ */
+function createTier1GameButton(gameName, isPlaceholder, gameId) {
+  const gameWrapper = document.createElement('div');
+  gameWrapper.className = 'tier1-game-wrapper';
+  
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = isPlaceholder ? 'tier-game-btn tier-game-btn-disabled' : 'tier-game-btn';
+  button.disabled = isPlaceholder;
+  
+  // Button content with info icon for placeholders
+  const buttonContent = document.createElement('div');
+  buttonContent.className = 'tier-game-btn-content';
+  
+  const buttonText = document.createElement('span');
+  buttonText.className = 'tier-game-btn-text';
+  if (gameName === 'Lucky Wheel') {
+    buttonText.textContent = 'ENTER TIER 1 GAME (BRONZE → SILVER)';
+  } else {
+    buttonText.textContent = gameName;
+  }
+  
+  buttonContent.appendChild(buttonText);
+  
+  // Add info icon for placeholder games
+  if (isPlaceholder && gameId) {
+    const infoIcon = document.createElement('span');
+    infoIcon.className = 'tier-game-info-icon';
+    infoIcon.textContent = '?';
+    infoIcon.setAttribute('data-game-id', gameId);
+    infoIcon.setAttribute('aria-label', `Info about ${gameName}`);
+    buttonContent.appendChild(infoIcon);
+  }
+  
+  button.appendChild(buttonContent);
+  
+  // Add click handler for active button
+  if (!isPlaceholder) {
+    button.addEventListener('click', () => handleTierGameClick(1));
+  }
+  
+  // Add "Game under development" text for placeholders
+  if (isPlaceholder) {
+    const devText = document.createElement('p');
+    devText.className = 'tier-game-dev-text';
+    devText.textContent = 'Game under development';
+    gameWrapper.appendChild(button);
+    gameWrapper.appendChild(devText);
+    
+    // Add expandable info panel
+    const infoPanel = document.createElement('div');
+    infoPanel.className = 'tier-game-info-panel';
+    infoPanel.id = `info-panel-${gameId}`;
+    infoPanel.setAttribute('hidden', '');
+    
+    const infoContent = document.createElement('div');
+    infoContent.className = 'tier-game-info-content';
+    // TODO: Replace placeholder Lorem Ipsum with real game explanations
+    infoContent.innerHTML = `
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+      <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>
+    `;
+    infoPanel.appendChild(infoContent);
+    gameWrapper.appendChild(infoPanel);
+  } else {
+    gameWrapper.appendChild(button);
+  }
+  
+  return gameWrapper;
+}
+
+/**
+ * Initialize info panel toggle functionality for Tier 1 placeholder games
+ */
+function initializeTier1GameInfoPanels() {
+  const infoIcons = document.querySelectorAll('.tier-game-info-icon');
+  infoIcons.forEach(icon => {
+    icon.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const gameId = icon.getAttribute('data-game-id');
+      if (!gameId) return;
+      
+      const infoPanel = document.getElementById(`info-panel-${gameId}`);
+      if (!infoPanel) return;
+      
+      const isOpen = !infoPanel.hasAttribute('hidden');
+      
+      if (isOpen) {
+        infoPanel.setAttribute('hidden', '');
+        icon.setAttribute('aria-expanded', 'false');
+      } else {
+        infoPanel.removeAttribute('hidden');
+        icon.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
 }
 
 /**
