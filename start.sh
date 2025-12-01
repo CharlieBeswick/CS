@@ -23,3 +23,7 @@ npx prisma migrate deploy || {
 echo "✅ Starting server..."
 exec npm start
 
+
+
+
+

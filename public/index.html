@@ -74,16 +74,27 @@
 
           <!-- How Crypto Snow Works -->
           <div class="how-it-works">
-            <h2>How Crypto Snow Works</h2>
-            <p class="how-it-works-text">
-              Cryptosnow is a Free game / framework that allows user to generate Tickets by watching adverts.<br><br>
-              These tickets can then be used to enter raffles! What do you win? More tickets of course!<br><br>
-              If you are lucky enough to win an Emerald or higher ticket, then you can exchange it for cryptocurrency at our rewards page!<br><br>
-              You are not allowed to share, trade or sell tickets and they have no real world value. However the ticket master values them greatly!<br><br>
-              No real money. No gambling. Just luck, progression - and prizes!
-            </p>
-            <div class="tier-ladder" id="tierLadder">
-              <!-- Tier ladder will be rendered here by JavaScript -->
+            <button 
+              type="button" 
+              class="how-it-works-header" 
+              id="howItWorksToggle"
+              aria-expanded="true"
+              aria-controls="howItWorksBody"
+            >
+              <h2>How does Crypto Snow work?</h2>
+              <span class="how-it-works-chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="how-it-works-body" id="howItWorksBody">
+              <p class="how-it-works-text">
+                Cryptosnow is a Free game / framework that allows user to generate Tickets by watching adverts.<br><br>
+                These tickets can then be used to enter raffles! What do you win? More tickets of course!<br><br>
+                If you are lucky enough to win an Emerald or higher ticket, then you can exchange it for cryptocurrency at our rewards page!<br><br>
+                You are not allowed to share, trade or sell tickets and they have no real world value. However the ticket master values them greatly!<br><br>
+                No real money. No gambling. Just luck, progression - and prizes!
+              </p>
+              <div class="tier-ladder" id="tierLadder">
+                <!-- Tier ladder will be rendered here by JavaScript -->
+              </div>
             </div>
           </div>
 

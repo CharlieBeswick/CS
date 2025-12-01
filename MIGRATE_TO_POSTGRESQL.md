@@ -69,3 +69,5 @@ If you need to go back to SQLite:
 2. Set `DATABASE_URL=file:./prisma/dev.db` in Railway
 3. Add Railway Volume at `/app/prisma` (see Option 1 in DATABASE_PERSISTENCE_FIX.md)
 
+
+

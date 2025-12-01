@@ -3556,14 +3556,63 @@ body {
   background: var(--card-bg);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
-  padding: 14px 12px;
+  padding: 0;
   margin-bottom: 14px;
+  overflow: hidden;
 }
 
-.how-it-works h2 {
+/* Collapsible header button with glowing outline */
+.how-it-works-header {
+  width: 100%;
+  background: rgba(10, 10, 25, 0.9);
+  border: 1px solid rgba(0, 255, 255, 0.4);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  text-align: left;
+}
+
+.how-it-works-header:hover {
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.7);
+  border-color: rgba(0, 255, 255, 0.6);
+}
+
+.how-it-works-header:focus {
+  outline: 2px solid var(--accent-neon);
+  outline-offset: 2px;
+}
+
+.how-it-works-header h2 {
   font-size: 1.1rem;
-  margin-bottom: 10px;
+  margin: 0;
   color: var(--text-primary);
+  flex: 1;
+}
+
+.how-it-works-chevron {
+  font-size: 0.9rem;
+  color: var(--accent-neon);
+  transition: transform 0.3s ease;
+  margin-left: 0.5rem;
+}
+
+.how-it-works-header[aria-expanded="false"] .how-it-works-chevron {
+  transform: rotate(-90deg);
+}
+
+/* Collapsible body content */
+.how-it-works-body {
+  padding: 14px 12px;
+}
+
+.how-it-works-body[hidden] {
+  display: none;
 }
 
 .how-it-works-text {

@@ -265,6 +265,24 @@ function setupEventListeners() {
     });
   });
   
+  // How Crypto Snow Works collapsible toggle
+  const howItWorksToggle = document.getElementById('howItWorksToggle');
+  const howItWorksBody = document.getElementById('howItWorksBody');
+  if (howItWorksToggle && howItWorksBody) {
+    // Default to open (expanded)
+    let isOpen = true;
+    
+    howItWorksToggle.addEventListener('click', () => {
+      isOpen = !isOpen;
+      howItWorksBody.hidden = !isOpen;
+      howItWorksToggle.setAttribute('aria-expanded', isOpen);
+    });
+    
+    // Initialize state
+    howItWorksBody.hidden = false;
+    howItWorksToggle.setAttribute('aria-expanded', 'true');
+  }
+  
   // Info modal
   const infoLink = document.getElementById('infoLink');
   const infoModal = document.getElementById('infoModal');

@@ -73,3 +73,5 @@ Your database will now:
 - Railway Dashboard → PostgreSQL service → "Data" tab
 - You can see tables and data there
 
+
+
