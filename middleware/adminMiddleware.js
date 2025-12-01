@@ -16,38 +16,22 @@ const prisma = require('../lib/prisma');
  * Note: This should be called AFTER requireAuth middleware
  */
 async function requireAdmin(req, res, next) {
-  // requireAuth should have already checked session, but double-check
-  if (!req.session || !req.session.userId) {
+  // requireAuth should have already checked auth (session or token) and set req.user
+  // Safari FIX: Check req.user first (set by requireAuth for both session and token auth)
+  if (!req.user) {
+    // If req.user is not set, requireAuth didn't authenticate the user
     return res.status(401).json({ ok: false, error: 'Not authenticated' });
   }
   
-  try {
-    // Load user from database to check role
-    const user = await prisma.user.findUnique({
-      where: { id: req.session.userId },
-      select: { id: true, email: true, role: true },
-    });
-    
-    if (!user) {
-      console.error('Admin check: User not found', { userId: req.session.userId });
-      return res.status(401).json({ ok: false, error: 'User not found' });
-    }
-    
-    // Check if user has ADMIN role
-    if (user.role !== 'ADMIN') {
-      console.log('Admin check: User is not admin', { email: user.email, role: user.role });
-      return res.status(403).json({ ok: false, error: 'Admin access required' });
-    }
-    
-    // Attach user to request for convenience
-    req.user = user;
-    
-    // User is admin, proceed
-    next();
-  } catch (error) {
-    console.error('Error checking admin access:', error);
-    return res.status(500).json({ ok: false, error: 'Internal server error' });
+  // req.user is already set by requireAuth, just check the role
+  // Check if user has ADMIN role
+  if (req.user.role !== 'ADMIN') {
+    console.log('Admin check: User is not admin', { email: req.user.email, role: req.user.role });
+    return res.status(403).json({ ok: false, error: 'Admin access required' });
   }
+  
+  // User is admin, proceed
+  next();
 }
 
 module.exports = {

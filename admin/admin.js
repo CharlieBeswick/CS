@@ -26,13 +26,27 @@ async function init() {
 }
 
 /**
+ * Get auth headers (including X-Auth-Token for Safari users)
+ */
+function getAuthHeaders() {
+  const headers = {};
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    headers['X-Auth-Token'] = token;
+  }
+  return headers;
+}
+
+/**
  * Check if user has admin access
  */
 async function checkAdminAccess() {
   try {
     console.log('[Admin] Checking admin access, API_BASE:', API_BASE);
+    const headers = getAuthHeaders();
     const response = await fetch(`${API_BASE}/auth/me`, {
       credentials: 'include',
+      headers: headers,
     });
     
     console.log('[Admin] Auth check response status:', response.status);
@@ -194,8 +208,10 @@ let lobbyFiltersInitialized = false;
 
 async function loadAdminDashboard() {
   try {
+    const headers = getAuthHeaders();
     const response = await fetch(`${API_BASE}/api/admin/summary`, {
       credentials: 'include',
+      headers: headers,
     });
     
     const data = await response.json();
@@ -270,8 +286,10 @@ function renderAdminDashboard(stats) {
 async function loadWithdrawals() {
   try {
     // Load stats
+    const headers = getAuthHeaders();
     const statsRes = await fetch(`${API_BASE}/api/admin/withdrawals/stats`, {
       credentials: 'include',
+      headers: headers,
     });
     const statsData = await statsRes.json();
     
@@ -281,8 +299,10 @@ async function loadWithdrawals() {
 
     // Load withdrawals
     const filter = currentWithdrawalFilter === 'all' ? '' : `?status=${currentWithdrawalFilter}`;
+    const headers = getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/admin/withdrawals${filter}`, {
       credentials: 'include',
+      headers: headers,
     });
     
     const data = await res.json();
@@ -468,8 +488,10 @@ async function loadAdminLobbies() {
     if (currentLobbyFilters.days) params.append('days', currentLobbyFilters.days);
 
     const query = params.toString() ? `?${params.toString()}` : '';
+    const headers = getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/admin/lobbies${query}`, {
       credentials: 'include',
+      headers: headers,
     });
     const data = await res.json();
     if (data.ok) {
@@ -532,8 +554,10 @@ async function loadLobbyDetail(lobbyId) {
   if (!detail) return;
   detail.innerHTML = '<p>Loading lobby details...</p>';
   try {
+    const headers = getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/admin/lobbies/${lobbyId}`, {
       credentials: 'include',
+      headers: headers,
     });
     const data = await res.json();
     if (!data.ok) {
@@ -673,9 +697,11 @@ async function markWithdrawalPaid(id) {
   }
 
   try {
+    const headers = getAuthHeaders();
+    headers['Content-Type'] = 'application/json';
     const res = await fetch(`${API_BASE}/api/admin/withdrawals/${id}/status`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: headers,
       credentials: 'include',
       body: JSON.stringify({ status: 'PAID' }),
     });
@@ -700,9 +726,11 @@ async function markWithdrawalRejected(id) {
   if (notes === null) return; // User cancelled
 
   try {
+    const headers = getAuthHeaders();
+    headers['Content-Type'] = 'application/json';
     const res = await fetch(`${API_BASE}/api/admin/withdrawals/${id}/status`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: headers,
       credentials: 'include',
       body: JSON.stringify({ 
         status: 'REJECTED',
@@ -727,9 +755,11 @@ async function markWithdrawalRejected(id) {
  */
 async function markWithdrawalProcessing(id) {
   try {
+    const headers = getAuthHeaders();
+    headers['Content-Type'] = 'application/json';
     const res = await fetch(`${API_BASE}/api/admin/withdrawals/${id}/status`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: headers,
       credentials: 'include',
       body: JSON.stringify({ status: 'PROCESSING' }),
     });
@@ -838,8 +868,10 @@ async function loadAdminGameHistory() {
 
   try {
     listEl.innerHTML = '<p>Loading game history...</p>';
+    const headers = getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/admin/game-history?limit=100`, {
       credentials: 'include',
+      headers: headers,
     });
     const data = await res.json();
 
@@ -934,8 +966,10 @@ async function selectAdminGameHistory(gameNumber) {
 
   try {
     detailEl.innerHTML = '<p>Loading game details...</p>';
+    const headers = getAuthHeaders();
     const res = await fetch(`${API_BASE}/api/admin/game-history/${gameNumber}`, {
       credentials: 'include',
+      headers: headers,
     });
     const data = await res.json();
 
@@ -1068,8 +1102,10 @@ let adminUsersExpanded = new Set();
 
 async function loadAdminUsers() {
   try {
+    const headers = getAuthHeaders();
     const response = await fetch(`${API_BASE}/api/admin/users`, {
       credentials: 'include',
+      headers: headers,
     });
     
     const data = await response.json();
@@ -1174,8 +1210,10 @@ async function toggleUserDetail(userId) {
 
 async function loadUserDetail(userId) {
   try {
+    const headers = getAuthHeaders();
     const response = await fetch(`${API_BASE}/api/admin/users/${userId}`, {
       credentials: 'include',
+      headers: headers,
     });
     
     const data = await response.json();
@@ -1456,11 +1494,11 @@ async function addTicketsToUser(userId) {
   messageEl.innerHTML = '<span style="color: var(--admin-text-secondary);">Adding tickets...</span>';
   
   try {
+    const headers = getAuthHeaders();
+    headers['Content-Type'] = 'application/json';
     const response = await fetch(`${API_BASE}/api/admin/users/${userId}/add-tickets`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: headers,
       credentials: 'include',
       body: JSON.stringify({
         tier,
