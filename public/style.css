@@ -429,6 +429,7 @@ body {
 /* Lobby Screen */
 .lobby-content {
   padding: 12px 10px;
+  padding-bottom: 120px; /* Extra space for fixed how-it-works section at bottom */
 }
 
 .lobby-content h2 {
@@ -3557,8 +3558,20 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
   padding: 0;
-  margin-bottom: 14px;
+  margin-bottom: 0;
   overflow: hidden;
+}
+
+/* Position how-it-works at bottom of lobby screen, just above bottom nav */
+.lobby-screen .how-it-works {
+  position: fixed;
+  bottom: 70px; /* Position just above bottom nav (nav height ~60px + padding) */
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 20px);
+  max-width: calc(480px - 20px);
+  z-index: 99;
+  margin-top: 0;
 }
 
 /* Collapsible header button with glowing outline */
