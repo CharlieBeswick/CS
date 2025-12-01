@@ -3158,9 +3158,12 @@ async function handleBronzeJoin() {
       ? `${API_BASE}/api/lobbies/${encodeURIComponent(lobby.id)}/choose-number`
       : `${API_BASE}/api/lobbies/${currentTier}/join`;
 
+    const headers = getAuthHeaders();
+    headers['Content-Type'] = 'application/json';
+    
     const res = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: headers,
       credentials: 'include',
       body: JSON.stringify({ luckyNumber: selected }),
     });
