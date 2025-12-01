@@ -222,237 +222,35 @@ router.post('/register', async (req, res) => {
     ok: false, 
     error: 'Email/password registration is disabled. Please use Google Sign-In.' 
   });
-  
-  // Original code removed - Google OAuth only
-  /* DISABLED CODE:
-  try {
-    // Safari FIX: Accept data from either JSON body or form-encoded body
-    const email = req.body.email;
-    const password = req.body.password;
-    const fullName = req.body.fullName;
-    const dateOfBirth = req.body.dateOfBirth;
-
-    // Validation
-    if (!email || !password || !fullName || !dateOfBirth) {
-      return res.status(400).json({ 
-        ok: false, 
-        error: 'Email, password, full name, and date of birth are required' 
-      });
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ ok: false, error: 'Invalid email format' });
-    }
-
-    // Password validation (minimum 8 characters)
-    if (password.length < 8) {
-      return res.status(400).json({ 
-        ok: false, 
-        error: 'Password must be at least 8 characters long' 
-      });
-    }
-
-    // Age calculation
-    const birthDate = new Date(dateOfBirth);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-
-    // Age verification (must be 13+)
-    if (age < 13) {
-      return res.status(400).json({ 
-        ok: false, 
-        error: 'You must be at least 13 years old to register' 
-      });
-    }
-
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
-
-    if (existingUser) {
-      return res.status(400).json({ 
-        ok: false, 
-        error: 'An account with this email already exists' 
-      });
-    }
-
-    // Hash password
-    const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        email: email.toLowerCase(),
-        passwordHash,
-        fullName,
-        name: fullName, // Also set name for compatibility
-        publicName: fullName,
-        dateOfBirth: birthDate,
-        age,
-        ticketWallet: createEmptyWallet(),
-        role: adminEmails.includes(email.toLowerCase()) ? 'ADMIN' : 'PLAYER',
-      },
-    });
-
-    // Create session
-    req.session.userId = user.id;
-    req.session.userEmail = user.email;
-
-    // Track IP and user agent
-    const { getClientIp, getUserAgent } = require('../lib/ipHelper');
-    const ip = getClientIp(req);
-    const userAgent = getUserAgent(req);
-
-    await prisma.userSession.create({
-      data: {
-        userId: user.id,
-        ipAddress: ip,
-        userAgent: userAgent,
-        lastSeenAt: new Date(),
-      },
-    });
-
-    // Safari FIX: Generate token and redirect to first-party frontend page
-    const { generateToken } = require('../middleware/authMiddleware');
-    let authToken = null;
-    
-    try {
-      authToken = await generateToken(user.id);
-    } catch (tokenError) {
-      // If token generation fails (e.g., AuthToken table doesn't exist yet),
-      // log the error but still allow login to proceed with session cookie
-      console.error('[AUTH] Token generation failed, but login will proceed with session cookie:', tokenError.message);
-      console.error('[AUTH] This is likely because AuthToken table does not exist yet. Migration may not have run.');
-    }
-
-    const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
-    const redirectUrl = authToken 
-      ? `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`
-      : `${frontendUrl}/auth-complete?error=token_generation_failed`;
-    
-    console.log(`[AUTH] Login success for ${user.email}, redirecting to:`, redirectUrl.substring(0, 100) + '...');
-    if (authToken) {
-      console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
-    } else {
-      console.log(`[AUTH] No token generated - user will need to use session cookie or wait for migration`);
-    }
-    
-    res.redirect(302, redirectUrl);
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ ok: false, error: 'Registration failed' });
-  }
 });
 
 /**
  * POST /auth/login
- * Authenticates user with email/password
+ * DISABLED: Email/password login removed - Google OAuth only
  */
 router.post('/login', async (req, res) => {
-  try {
-    // Safari FIX: Accept data from either JSON body or form-encoded body
-    const email = req.body.email;
-    const password = req.body.password;
-
-    if (!email || !password) {
-      return res.status(400).json({ 
-        ok: false, 
-        error: 'Email and password are required' 
-      });
-    }
-
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
-
-    if (!user) {
-      return res.status(401).json({ 
-        ok: false, 
-        error: 'Invalid email or password' 
-      });
-    }
-
-    // Check if user has a password (email/password account)
-    if (!user.passwordHash) {
-      return res.status(401).json({ 
-        ok: false, 
-        error: 'This account was created with Google Sign-In. Please use Google to sign in.' 
-      });
-    }
-
-    // Verify password
-    const passwordValid = await bcrypt.compare(password, user.passwordHash);
-    if (!passwordValid) {
-      return res.status(401).json({ 
-        ok: false, 
-        error: 'Invalid email or password' 
-      });
-    }
-
-    // Create session
-    req.session.userId = user.id;
-    req.session.userEmail = user.email;
-
-    // Track IP and user agent
-    const { getClientIp, getUserAgent } = require('../lib/ipHelper');
-    const ip = getClientIp(req);
-    const userAgent = getUserAgent(req);
-
-    await prisma.userSession.create({
-      data: {
-        userId: user.id,
-        ipAddress: ip,
-        userAgent: userAgent,
-        lastSeenAt: new Date(),
-      },
-    });
-
-    // Safari FIX: Generate token and redirect to first-party frontend page
-    const { generateToken } = require('../middleware/authMiddleware');
-    let authToken = null;
-    
-    try {
-      authToken = await generateToken(user.id);
-    } catch (tokenError) {
-      // If token generation fails (e.g., AuthToken table doesn't exist yet),
-      // log the error but still allow login to proceed with session cookie
-      console.error('[AUTH] Token generation failed, but login will proceed with session cookie:', tokenError.message);
-      console.error('[AUTH] This is likely because AuthToken table does not exist yet. Migration may not have run.');
-    }
-
-    const frontendUrl = process.env.FRONTEND_URL || 'https://cryptosnow.app';
-    const redirectUrl = authToken 
-      ? `${frontendUrl}/auth-complete?token=${encodeURIComponent(authToken)}`
-      : `${frontendUrl}/auth-complete?error=token_generation_failed`;
-    
-    console.log(`[AUTH] Login success for ${user.email}, redirecting to:`, redirectUrl.substring(0, 100) + '...');
-    if (authToken) {
-      console.log(`[AUTH] Token being sent in redirect (first 20 chars):`, authToken.substring(0, 20));
-    } else {
-      console.log(`[AUTH] No token generated - user will need to use session cookie or wait for migration`);
-    }
-    
-    res.redirect(302, redirectUrl);
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ ok: false, error: 'Login failed' });
-  }
+  return res.status(403).json({ 
+    ok: false, 
+    error: 'Email/password login is disabled. Please use Google Sign-In.' 
+  });
 });
 
 /**
- * POST /auth/register
- * Creates a new user account with email/password
+ * POST /auth/register (DUPLICATE - DISABLED)
+ * Email/password registration removed - Google OAuth only
  */
 router.post('/register', async (req, res) => {
+  return res.status(403).json({ 
+    ok: false, 
+    error: 'Email/password registration is disabled. Please use Google Sign-In.' 
+  });
+});
+
+/**
+ * POST /auth/login (DUPLICATE - DISABLED)
+ * Email/password login removed - Google OAuth only
+ */
+router.post('/login', async (req, res) => {
   try {
     const { email, password, fullName, dateOfBirth } = req.body;
 
