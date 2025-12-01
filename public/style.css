@@ -3711,6 +3711,19 @@ body {
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* Return to Lobby Button */
+.tier-game-return-btn {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.15));
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.tier-game-return-btn:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 165, 0, 0.25));
+  border-color: var(--accent-gold);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+}
+
 /* Tier 1 Game Wrapper */
 .tier1-game-wrapper {
   margin-bottom: 12px;

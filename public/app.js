@@ -1764,8 +1764,44 @@ function renderTierGameButtons() {
   // Check if player has Bronze tickets for Tier 1 games
   const bronzeBalance = wallet['BRONZE'] || 0;
   
-  // If no bronze tickets, show message and don't show any game previews
-  if (bronzeBalance === 0) {
+  // Check if user is currently in an active lobby (not resolved)
+  const currentLobby = appState.currentTierLobby || appState.bronzeLobby;
+  const isInActiveLobby = currentLobby && currentLobby.status && currentLobby.status !== 'RESOLVED';
+  
+  // If user is in an active lobby, show "Return to Lobby" button
+  if (isInActiveLobby) {
+    const returnButton = document.createElement('button');
+    returnButton.type = 'button';
+    returnButton.className = 'tier-game-btn tier-game-return-btn';
+    returnButton.textContent = 'Return to Lobby';
+    returnButton.addEventListener('click', () => {
+      // Set current tier and navigate back to lobby
+      appState.currentTier = 'BRONZE';
+      showScreen('bronzeLobby');
+      startBronzeLobbyLoop();
+    });
+    buttonsContainer.appendChild(returnButton);
+    
+    // If they also have no tickets, show the message below the button
+    if (bronzeBalance === 0) {
+      const message = document.createElement('p');
+      message.className = 'tier-games-empty';
+      message.textContent = 'You must acquire bronze tickets in order to enter tier 1 games';
+      message.style.textAlign = 'center';
+      message.style.color = 'var(--text-secondary)';
+      message.style.padding = '1rem';
+      message.style.marginTop = '12px';
+      buttonsContainer.appendChild(message);
+    }
+    
+    // Don't show game previews if in active lobby but no tickets
+    if (bronzeBalance === 0) {
+      return;
+    }
+  }
+  
+  // If no bronze tickets and not in active lobby, show message and don't show any game previews
+  if (bronzeBalance === 0 && !isInActiveLobby) {
     const message = document.createElement('p');
     message.className = 'tier-games-empty';
     message.textContent = 'You must acquire bronze tickets in order to enter tier 1 games';
