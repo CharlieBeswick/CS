@@ -3341,9 +3341,18 @@ body {
   gap: 12px;
   margin-bottom: 20px;
   padding: 0 4px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-@media (max-width: 600px) {
+.info-cards-row > .info-card {
+  width: 100%;
+  min-width: 0; /* Prevent grid items from overflowing */
+  box-sizing: border-box;
+}
+
+/* Only stack on very small screens (mobile phones) */
+@media (max-width: 400px) {
   .info-cards-row {
     grid-template-columns: 1fr;
     gap: 12px;
