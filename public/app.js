@@ -389,8 +389,6 @@ function setupEventListeners() {
       }
       // Navigate to My Tickets screen (which now contains promotions features)
       showScreen('tickets');
-      // Load free attempts status when opening My Tickets
-      loadFreeAttemptsStatus();
       // Update bottom nav
       document.querySelectorAll('.bottom-nav .nav-item')
         .forEach(i => i.classList.remove('active'));
@@ -400,12 +398,6 @@ function setupEventListeners() {
   }
 
   // Watch ad button is now in My Tickets screen (handled below)
-
-  // Free attempt button
-  const freeAttemptBtn = document.getElementById('freeAttemptBtn');
-  if (freeAttemptBtn) {
-    freeAttemptBtn.addEventListener('click', handleFreeAttemptPlay);
-  }
 
   // Redemption screen buttons
   const redemptionBackBtn = document.getElementById('redemptionBackBtn');
@@ -750,12 +742,11 @@ function setCurrentUser(user) {
     authBadge.classList.add('signed-in');
   }
 
-  // Load wallet and free attempts status when user is set
+  // Load wallet when user is set
   // Add a delay to ensure session cookie is processed (especially important for iOS Safari)
   // iOS Safari can be slow to process cross-origin cookies
   setTimeout(() => {
     loadWallet();
-    loadFreeAttemptsStatus();
   }, 500); // Increased delay for iOS Safari cookie processing
 
   // Update balance UI (legacy - deprecated)
@@ -868,9 +859,6 @@ function loadTicketsScreen() {
   
   // Load wallet to display 8-tier grid
   loadWallet();
-  
-  // Load free attempts status (promotions feature)
-  loadFreeAttemptsStatus();
   
   // Update legacy balance UI (deprecated)
   updateTicketsBalanceUI();
@@ -1579,7 +1567,6 @@ function showPromotionsScreen() {
 
   // Redirect to My Tickets screen (which now contains promotions)
   showScreen('tickets');
-  loadFreeAttemptsStatus();
   // Update bottom nav
   document.querySelectorAll('.bottom-nav .nav-item')
     .forEach(i => i.classList.remove('active'));
