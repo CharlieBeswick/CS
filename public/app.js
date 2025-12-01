@@ -269,8 +269,8 @@ function setupEventListeners() {
   const howItWorksToggle = document.getElementById('howItWorksToggle');
   const howItWorksBody = document.getElementById('howItWorksBody');
   if (howItWorksToggle && howItWorksBody) {
-    // Default to open (expanded)
-    let isOpen = true;
+    // Default to closed (collapsed)
+    let isOpen = false;
     
     howItWorksToggle.addEventListener('click', () => {
       isOpen = !isOpen;
@@ -279,8 +279,8 @@ function setupEventListeners() {
     });
     
     // Initialize state
-    howItWorksBody.hidden = false;
-    howItWorksToggle.setAttribute('aria-expanded', 'true');
+    howItWorksBody.hidden = true;
+    howItWorksToggle.setAttribute('aria-expanded', 'false');
   }
   
   // Info modal
