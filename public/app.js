@@ -1761,12 +1761,27 @@ function renderTierGameButtons() {
   // Get wallet balances
   const wallet = appState.wallet || {};
   
-  // Tier 1 Games: Always show Lucky Wheel button if player has Bronze tickets
+  // Check if player has Bronze tickets for Tier 1 games
   const bronzeBalance = wallet['BRONZE'] || 0;
-  if (bronzeBalance > 0) {
-    const luckyWheelButton = createTier1GameButton('Lucky Wheel', false, null);
-    buttonsContainer.appendChild(luckyWheelButton);
+  
+  // If no bronze tickets, show message and don't show any game previews
+  if (bronzeBalance === 0) {
+    const message = document.createElement('p');
+    message.className = 'tier-games-empty';
+    message.textContent = 'You must acquire bronze tickets in order to enter tier 1 games';
+    message.style.textAlign = 'center';
+    message.style.color = 'var(--text-secondary)';
+    message.style.padding = '1rem';
+    buttonsContainer.appendChild(message);
+    
+    // Don't show any games or initialize info panels if no tickets
+    return;
   }
+  
+  // Player has bronze tickets - show Tier 1 games
+  // Show Lucky Wheel button (active)
+  const luckyWheelButton = createTier1GameButton('Lucky Wheel', false, null);
+  buttonsContainer.appendChild(luckyWheelButton);
   
   // Add three placeholder game buttons (disabled)
   // TODO: Replace greyed-out game buttons with active join logic after implementing their game engines
@@ -1798,17 +1813,6 @@ function renderTierGameButtons() {
       button.addEventListener('click', () => handleTierGameClick(tierNum));
       buttonsContainer.appendChild(button);
     }
-  }
-  
-  // Show message if no buttons are available (only for tiers 2+)
-  if (bronzeBalance === 0 && buttonsContainer.children.length === placeholderGames.length) {
-    const message = document.createElement('p');
-    message.className = 'tier-games-empty';
-    message.textContent = 'You need tickets to enter tier games. Watch ads or play free games to earn Bronze tickets!';
-    message.style.textAlign = 'center';
-    message.style.color = 'var(--muted)';
-    message.style.padding = '1rem';
-    buttonsContainer.insertBefore(message, buttonsContainer.firstChild);
   }
   
   // Initialize info panel toggles for placeholder games
