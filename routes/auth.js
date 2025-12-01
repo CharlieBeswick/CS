@@ -215,9 +215,16 @@ router.post('/google', async (req, res) => {
 
 /**
  * POST /auth/register
- * Creates a new user account with email/password
+ * DISABLED: Email/password registration removed - Google OAuth only
  */
 router.post('/register', async (req, res) => {
+  return res.status(403).json({ 
+    ok: false, 
+    error: 'Email/password registration is disabled. Please use Google Sign-In.' 
+  });
+  
+  // Original code removed - Google OAuth only
+  /* DISABLED CODE:
   try {
     // Safari FIX: Accept data from either JSON body or form-encoded body
     const email = req.body.email;
