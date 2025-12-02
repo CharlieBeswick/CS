@@ -2828,23 +2828,50 @@ function renderLobbyAvatarStrip() {
     return;
   }
 
-  container.innerHTML = displayPlayers.map(player => {
+  // Distribute players across 3 layers (back, middle, front)
+  // Back layer: ~33%, Middle: ~33%, Front: ~34%
+  const totalPlayers = displayPlayers.length;
+  const backCount = Math.ceil(totalPlayers * 0.33);
+  const middleCount = Math.ceil(totalPlayers * 0.33);
+  const frontCount = totalPlayers - backCount - middleCount;
+  
+  // Calculate positions for overlapping crowd effect
+  const containerWidth = container.offsetWidth || 480; // Fallback width
+  const avatarWidth = 80; // Base avatar width
+  const overlapOffset = 50; // How much avatars overlap (negative spacing)
+  const startOffset = 20; // Start position from left edge
+  
+  container.innerHTML = displayPlayers.map((player, index) => {
+    // Determine which layer this avatar belongs to
+    let layer, layerIndex;
+    if (index < backCount) {
+      layer = 'back';
+      layerIndex = index;
+    } else if (index < backCount + middleCount) {
+      layer = 'middle';
+      layerIndex = index - backCount;
+    } else {
+      layer = 'front';
+      layerIndex = index - backCount - middleCount;
+    }
+    
+    // Calculate horizontal position with overlap
+    // Each layer starts slightly offset and overlaps
+    const baseX = startOffset + (layerIndex * overlapOffset);
+    // Add slight random variation for more natural crowd look
+    const randomOffset = (Math.random() - 0.5) * 10; // ±5px variation
+    const leftPosition = baseX + randomOffset;
+    
     // Request full-body render for lobby avatars
     const avatarUrl = getRpmAvatarUrl(player, true);
     
-    // Debug logging
-    console.log('[Avatar Strip] Player:', {
-      displayName: player.displayName,
-      userId: player.userId,
-      rpmAvatarId: player.rpmAvatarId,
-      rpmAvatarUrl: player.rpmAvatarUrl,
-      generatedUrl: avatarUrl,
-      hasAvatar: !!avatarUrl,
-    });
-    
     if (avatarUrl) {
       return `
-        <div class="bronze-avatar-strip-item" title="${escapeHtml(player.displayName)}">
+        <div 
+          class="bronze-avatar-strip-item layer-${layer}" 
+          title="${escapeHtml(player.displayName)}"
+          style="left: ${leftPosition}px;"
+        >
           <img 
             src="${avatarUrl}" 
             alt="${escapeHtml(player.displayName)}"
@@ -2861,9 +2888,12 @@ function renderLobbyAvatarStrip() {
     } else {
       // No avatar - show placeholder with initial
       const initial = (player.displayName || '?')[0].toUpperCase();
-      console.log('[Avatar Strip] No avatar URL for player, showing placeholder:', player.displayName);
       return `
-        <div class="bronze-avatar-strip-item" title="${escapeHtml(player.displayName)}">
+        <div 
+          class="bronze-avatar-strip-item layer-${layer}" 
+          title="${escapeHtml(player.displayName)}"
+          style="left: ${leftPosition}px;"
+        >
           <div class="bronze-avatar-strip-placeholder">
             <span class="bronze-avatar-strip-initial">${escapeHtml(initial)}</span>
           </div>

@@ -1799,21 +1799,45 @@ body {
 
 /* Lobby Avatar Strip - shows player avatars under the wheel */
 .bronze-avatar-strip {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
+  position: relative;
+  width: 100%;
+  height: 280px; /* Fixed height to accommodate 3 layers with overlap */
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: visible; /* Allow avatars to overflow for crowd effect */
 }
 
 .bronze-avatar-strip-item {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 0.5; /* Taller aspect ratio (2:1) to show full body from head to toe */
+  position: absolute;
+  bottom: 0;
+  width: 80px; /* Fixed width for avatars */
+  height: 200px; /* Fixed height for full-body avatars */
   overflow: hidden;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+/* Back layer - smaller, higher up, behind */
+.bronze-avatar-strip-item.layer-back {
+  z-index: 1;
+  transform: scale(0.7) translateY(-20px);
+  opacity: 0.8;
+}
+
+/* Middle layer - medium size, middle position */
+.bronze-avatar-strip-item.layer-middle {
+  z-index: 2;
+  transform: scale(0.85) translateY(-10px);
+  opacity: 0.9;
+}
+
+/* Front layer - larger, lower down, in front */
+.bronze-avatar-strip-item.layer-front {
+  z-index: 3;
+  transform: scale(1) translateY(0px);
+  opacity: 1;
 }
 
 .bronze-avatar-strip-avatar {
@@ -1848,21 +1872,38 @@ body {
   text-transform: uppercase;
 }
 
-/* Responsive: 4 columns on smaller screens, 3 on very small */
-@media (max-width: 400px) {
+/* Responsive adjustments for crowd layout */
+@media (max-width: 768px) {
   .bronze-avatar-strip {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
+    height: 240px; /* Slightly shorter on tablets */
   }
   
-  .bronze-avatar-strip-initial {
-    font-size: 1rem;
+  .bronze-avatar-strip-item {
+    width: 70px;
+    height: 180px;
   }
 }
 
-@media (max-width: 320px) {
+@media (max-width: 480px) {
   .bronze-avatar-strip {
-    grid-template-columns: repeat(3, 1fr);
+    height: 220px; /* Shorter on mobile */
+  }
+  
+  .bronze-avatar-strip-item {
+    width: 60px;
+    height: 160px;
+  }
+  
+  .bronze-avatar-strip-item.layer-back {
+    transform: scale(0.65) translateY(-15px);
+  }
+  
+  .bronze-avatar-strip-item.layer-middle {
+    transform: scale(0.8) translateY(-8px);
+  }
+  
+  .bronze-avatar-strip-item.layer-front {
+    transform: scale(0.95) translateY(0px);
   }
 }
 
