@@ -2754,6 +2754,7 @@ function getRpmAvatarUrl(player) {
 
 /**
  * Render lobby avatar strip - shows up to 20 player avatars under the wheel
+ * Only re-renders if the player list has actually changed to prevent image reload loops
  */
 function renderLobbyAvatarStrip() {
   const container = document.getElementById('bronzeAvatarStrip');
@@ -2761,7 +2762,10 @@ function renderLobbyAvatarStrip() {
 
   const lobby = appState.currentTierLobby || appState.bronzeLobby;
   if (!lobby) {
-    container.innerHTML = '';
+    if (appState.avatarStripCache.playerIds !== null) {
+      container.innerHTML = '';
+      appState.avatarStripCache.playerIds = null;
+    }
     return;
   }
 
@@ -2772,6 +2776,18 @@ function renderLobbyAvatarStrip() {
 
   // Limit to 20 avatars
   const displayPlayers = joinedPlayers.slice(0, 20);
+
+  // Create a signature of current players to detect changes
+  const currentPlayerIds = displayPlayers.map(p => `${p.userId}:${p.rpmAvatarId || 'none'}`).join(',');
+  
+  // Only re-render if the player list has changed
+  if (appState.avatarStripCache.playerIds === currentPlayerIds) {
+    return; // No changes, skip re-render to prevent image reload
+  }
+
+  // Update cache
+  appState.avatarStripCache.playerIds = currentPlayerIds;
+  appState.avatarStripCache.lastRender = Date.now();
 
   if (displayPlayers.length === 0) {
     container.innerHTML = '';
