@@ -2742,16 +2742,17 @@ function updateBronzeTimer(el, targetIso, prefix = '') {
  * Reuses the same logic as homepage avatar card
  */
 function getRpmAvatarUrl(player) {
-  // Prefer rpmAvatarUrl if it's already a usable image URL
-  if (player.rpmAvatarUrl) {
-    return player.rpmAvatarUrl;
-  }
-  
-  // Otherwise, derive from rpmAvatarId using RPM Render API
+  // Always use rpmAvatarId to generate the .png image URL
+  // rpmAvatarUrl is often a .glb 3D model file, not an image
   if (player.rpmAvatarId) {
     // Use the same URL format as homepage: https://models.readyplayer.me/{avatarId}.png
     // This gives a full-body render by default
     return `https://models.readyplayer.me/${player.rpmAvatarId}.png`;
+  }
+  
+  // Only use rpmAvatarUrl if it's explicitly an image (not .glb)
+  if (player.rpmAvatarUrl && !player.rpmAvatarUrl.endsWith('.glb')) {
+    return player.rpmAvatarUrl;
   }
   
   return null;
