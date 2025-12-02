@@ -26,6 +26,11 @@ const appState = {
   // Legacy Bronze support (for backward compatibility)
   bronzeLobby: null,
   bronzeLobbyInterval: null,
+  // Cache for avatar strip to prevent unnecessary re-renders
+  avatarStripCache: {
+    playerIds: null,
+    lastRender: null,
+  },
   bronzeLobbyChatInterval: null,
   bronzeLobbyTimerInterval: null,
   bronzeLobbyChat: [],
