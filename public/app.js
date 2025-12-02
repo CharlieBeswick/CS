@@ -2615,6 +2615,7 @@ function renderTierLobby(tier = null) {
   renderBronzeScoreboard();
   renderBronzePicker();
   renderBronzeWheel();
+  renderLobbyAvatarStrip(); // Render avatar strip under wheel
   renderBronzeChat();
 }
 
@@ -2729,6 +2730,84 @@ function updateBronzeTimer(el, targetIso, prefix = '') {
   } else {
     el.textContent = `${prefix}${seconds}s`;
   }
+}
+
+/**
+ * Get Ready Player Me avatar image URL for a player
+ * Reuses the same logic as homepage avatar card
+ */
+function getRpmAvatarUrl(player) {
+  // Prefer rpmAvatarUrl if it's already a usable image URL
+  if (player.rpmAvatarUrl) {
+    return player.rpmAvatarUrl;
+  }
+  
+  // Otherwise, derive from rpmAvatarId using RPM Render API
+  if (player.rpmAvatarId) {
+    // Use the same URL format as homepage: https://models.readyplayer.me/{avatarId}.png
+    // This gives a full-body render by default
+    return `https://models.readyplayer.me/${player.rpmAvatarId}.png`;
+  }
+  
+  return null;
+}
+
+/**
+ * Render lobby avatar strip - shows up to 20 player avatars under the wheel
+ */
+function renderLobbyAvatarStrip() {
+  const container = document.getElementById('bronzeAvatarStrip');
+  if (!container) return;
+
+  const lobby = appState.currentTierLobby || appState.bronzeLobby;
+  if (!lobby) {
+    container.innerHTML = '';
+    return;
+  }
+
+  // Get all players who have officially joined (have a lucky number)
+  const joinedPlayers = (lobby.players || []).filter(player => 
+    player.luckyNumber != null && player.luckyNumberRevealed !== false
+  );
+
+  // Limit to 20 avatars
+  const displayPlayers = joinedPlayers.slice(0, 20);
+
+  if (displayPlayers.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = displayPlayers.map(player => {
+    const avatarUrl = getRpmAvatarUrl(player);
+    
+    if (avatarUrl) {
+      return `
+        <div class="bronze-avatar-strip-item" title="${escapeHtml(player.displayName)}">
+          <img 
+            src="${avatarUrl}" 
+            alt="${escapeHtml(player.displayName)}"
+            class="bronze-avatar-strip-avatar"
+            loading="lazy"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+          />
+          <div class="bronze-avatar-strip-placeholder" style="display: none;">
+            <span class="bronze-avatar-strip-initial">${escapeHtml((player.displayName || '?')[0].toUpperCase())}</span>
+          </div>
+        </div>
+      `;
+    } else {
+      // No avatar - show placeholder with initial
+      const initial = (player.displayName || '?')[0].toUpperCase();
+      return `
+        <div class="bronze-avatar-strip-item" title="${escapeHtml(player.displayName)}">
+          <div class="bronze-avatar-strip-placeholder">
+            <span class="bronze-avatar-strip-initial">${escapeHtml(initial)}</span>
+          </div>
+        </div>
+      `;
+    }
+  }).join('');
 }
 
 function renderBronzeScoreboard() {

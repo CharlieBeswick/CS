@@ -1797,6 +1797,67 @@ body {
   font-size: 1.1rem;
 }
 
+/* Lobby Avatar Strip - shows player avatars under the wheel */
+.bronze-avatar-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bronze-avatar-strip-item {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 0.75;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.bronze-avatar-strip-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bronze-avatar-strip-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.bronze-avatar-strip-initial {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--accent-neon);
+  text-transform: uppercase;
+}
+
+/* Responsive: 4 columns on smaller screens, 3 on very small */
+@media (max-width: 400px) {
+  .bronze-avatar-strip {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  
+  .bronze-avatar-strip-initial {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .bronze-avatar-strip {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 .bronze-scoreboard {
   max-height: 240px;
   overflow-y: auto;
