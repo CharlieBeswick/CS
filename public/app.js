@@ -1738,12 +1738,6 @@ function renderPlayerInfo() {
   
   let html = '';
   
-  // Player avatar
-  const avatarUrl = user.avatarUrl || user.picture || '';
-  if (avatarUrl) {
-    html += `<img src="${avatarUrl}" alt="Player avatar" class="info-card-player-avatar" />`;
-  }
-  
   // Player display name
   const displayName = user.publicName || user.name || 'Anonymous';
   html += `<p class="info-card-player-name">${displayName}</p>`;
