@@ -2796,8 +2796,16 @@ function renderLobbyAvatarStrip() {
   // Create a signature of current players to detect changes
   const currentPlayerIds = displayPlayers.map(p => `${p.userId}:${p.rpmAvatarId || 'none'}`).join(',');
   
+  // Debug: Log cache comparison
+  console.log('[Avatar Strip] Cache check:', {
+    cached: appState.avatarStripCache.playerIds,
+    current: currentPlayerIds,
+    match: appState.avatarStripCache.playerIds === currentPlayerIds,
+  });
+  
   // Only re-render if the player list has changed
   if (appState.avatarStripCache.playerIds === currentPlayerIds) {
+    console.log('[Avatar Strip] Skipping re-render - no changes detected');
     return; // No changes, skip re-render to prevent image reload
   }
 
@@ -2820,6 +2828,7 @@ function renderLobbyAvatarStrip() {
       rpmAvatarId: player.rpmAvatarId,
       rpmAvatarUrl: player.rpmAvatarUrl,
       generatedUrl: avatarUrl,
+      hasAvatar: !!avatarUrl,
     });
     
     if (avatarUrl) {
