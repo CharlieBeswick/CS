@@ -1767,7 +1767,9 @@ function renderAvatarCard() {
   if (rpmAvatarId) {
     // User has an avatar - show the avatar image filling the entire card
     // Use RPM Render API for profile picture: https://models.readyplayer.me/{avatarId}.png
-    const avatarImageUrl = `https://models.readyplayer.me/${rpmAvatarId}.png`;
+    // Add cache-busting timestamp to force refresh when avatar is updated
+    const timestamp = new Date().getTime();
+    const avatarImageUrl = `https://models.readyplayer.me/${rpmAvatarId}.png?t=${timestamp}`;
     html = `
       <img 
         src="${avatarImageUrl}" 
@@ -1962,15 +1964,36 @@ function handleAvatarCreatorMessage(event) {
         url: url || null,
         rpmUserId: userId || null,
       })
-        .then(() => {
-          // Update user state
-          if (appState.currentUser) {
-            appState.currentUser.rpmAvatarId = avatarId;
-            appState.currentUser.rpmAvatarUrl = url || null;
-            appState.currentUser.rpmUserId = userId || null;
+        .then(async () => {
+          // Refresh user data from backend to ensure we have latest state
+          try {
+            const headers = getAuthHeaders();
+            const userRes = await fetch(`${API_BASE}/auth/me`, {
+              credentials: 'include',
+              headers: headers,
+            });
+            const userData = await userRes.json();
+            if (userData.ok && userData.user) {
+              appState.currentUser = userData.user;
+            } else {
+              // Fallback: update locally if refresh fails
+              if (appState.currentUser) {
+                appState.currentUser.rpmAvatarId = avatarId;
+                appState.currentUser.rpmAvatarUrl = url || null;
+                appState.currentUser.rpmUserId = userId || null;
+              }
+            }
+          } catch (error) {
+            console.warn('Failed to refresh user data, using local update:', error);
+            // Fallback: update locally if refresh fails
+            if (appState.currentUser) {
+              appState.currentUser.rpmAvatarId = avatarId;
+              appState.currentUser.rpmAvatarUrl = url || null;
+              appState.currentUser.rpmUserId = userId || null;
+            }
           }
           
-          // Re-render avatar card
+          // Re-render avatar card (with cache busting)
           renderAvatarCard();
           
           // Update profile screen if it's open
