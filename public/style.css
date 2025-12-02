@@ -3395,28 +3395,29 @@ body {
   text-align: center;
 }
 
-/* Info Cards Row */
+/* Info Cards Row - Mobile first: stack by default */
 .info-cards-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 12px;
   margin-bottom: 20px;
   padding: 0 4px;
   width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
 }
 
 .info-cards-row > .info-card {
   width: 100%;
-  min-width: 0; /* Prevent grid items from overflowing */
+  min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
 }
 
-/* Only stack on very small screens (mobile phones) */
-@media (max-width: 400px) {
+/* Show 3 columns on larger screens */
+@media (min-width: 600px) {
   .info-cards-row {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -3622,6 +3623,9 @@ body {
   align-items: center;
   padding: 10px 8px;
   margin-bottom: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
@@ -3785,8 +3789,9 @@ body {
 
 .get-bronze-btn {
   width: 100%;
-  max-width: 400px;
+  max-width: 100%;
   padding: 14px 24px;
+  box-sizing: border-box;
   border: none;
   border-radius: 12px;
   font-size: 1rem;
