@@ -2775,9 +2775,10 @@ function renderLobbyAvatarStrip() {
     return;
   }
 
-  // Get all players who have officially joined (have a lucky number)
+  // Get all active players in the lobby (show all avatars, regardless of lucky number visibility)
+  // Note: luckyNumber may be null for other players in WAITING status (privacy), but we still show their avatars
   const joinedPlayers = (lobby.players || []).filter(player => 
-    player.luckyNumber != null && player.luckyNumberRevealed !== false
+    player.isActive !== false
   );
 
   // Debug: Log the full lobby data to see what we're working with
