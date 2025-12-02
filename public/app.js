@@ -2779,6 +2779,16 @@ function renderLobbyAvatarStrip() {
     player.luckyNumber != null && player.luckyNumberRevealed !== false
   );
 
+  // Debug: Log the full lobby data to see what we're working with
+  if (joinedPlayers.length > 0) {
+    console.log('[Avatar Strip] Lobby players data:', {
+      totalPlayers: lobby.players?.length || 0,
+      joinedPlayers: joinedPlayers.length,
+      firstPlayer: joinedPlayers[0],
+      allPlayers: lobby.players,
+    });
+  }
+
   // Limit to 20 avatars
   const displayPlayers = joinedPlayers.slice(0, 20);
 
