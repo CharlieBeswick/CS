@@ -1221,12 +1221,12 @@ body {
   backdrop-filter: blur(10px);
   border-top: 2px solid var(--accent-neon);
   display: flex;
-  justify-content: space-evenly;
   align-items: center;
-  padding: 0.5rem 0.25rem;
+  padding: 0.4rem 0;
   box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
   z-index: 100;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .nav-item {
@@ -1234,26 +1234,27 @@ body {
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 0.4rem 0.3rem;
+  padding: 0.3rem 0.2rem;
   border-radius: var(--border-radius);
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2rem;
-  font-size: 0.65rem;
-  flex: 1;
+  justify-content: center;
+  gap: 0.15rem;
+  flex: 1 1 0;
   min-width: 0;
-  max-width: 100%;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .nav-item span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 0.6rem;
+  line-height: 1.1;
+  word-break: break-word;
+  overflow-wrap: break-word;
   max-width: 100%;
-  font-size: 0.65rem;
+  display: block;
 }
 
 .nav-item:hover {
