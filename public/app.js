@@ -364,6 +364,16 @@ function setupEventListeners() {
     });
   }
 
+  // Profile Change Avatar button
+  const profileChangeAvatarBtn = document.getElementById('profileChangeAvatarBtn');
+  if (profileChangeAvatarBtn) {
+    profileChangeAvatarBtn.addEventListener('click', () => {
+      if (!appState.currentUser) return;
+      // Open avatar creator in edit mode if user has avatar, otherwise create mode
+      openAvatarCreator(!!appState.currentUser.rpmAvatarId);
+    });
+  }
+
   // Profile form submission
   const profileForm = document.getElementById('profile-form');
   if (profileForm) {
@@ -833,7 +843,12 @@ function populateProfileForm() {
   if (nameInput) nameInput.value = appState.currentUser.publicName || appState.currentUser.name || '';
   if (avatarInput) avatarInput.value = appState.currentUser.avatarUrl || '';
   if (avatarImg) {
-    avatarImg.src = appState.currentUser.avatarUrl || appState.currentUser.picture || '';
+    // Show RPM avatar if available, otherwise fall back to avatarUrl or picture
+    if (appState.currentUser.rpmAvatarId) {
+      avatarImg.src = `https://models.readyplayer.me/${appState.currentUser.rpmAvatarId}.png`;
+    } else {
+      avatarImg.src = appState.currentUser.avatarUrl || appState.currentUser.picture || '';
+    }
   }
   if (walletAmount) {
     walletAmount.textContent = appState.currentUser.credits != null ? appState.currentUser.credits : 0;
@@ -1756,30 +1771,26 @@ function renderAvatarCard() {
   let html = '';
   
   if (rpmAvatarId) {
-    // User has an avatar - show the avatar image
+    // User has an avatar - show the avatar image filling the entire card
     // Use RPM Render API for profile picture: https://models.readyplayer.me/{avatarId}.png
     const avatarImageUrl = `https://models.readyplayer.me/${rpmAvatarId}.png`;
     html = `
-      <div class="avatar-card-content">
-        <img 
-          src="${avatarImageUrl}" 
-          alt="Player avatar" 
-          class="avatar-card-image" 
-          loading="lazy"
-          onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
-        />
-        <div class="avatar-card-placeholder" style="display: none;">
-          <p class="info-card-placeholder-text">avatar</p>
-        </div>
-        <button class="avatar-card-edit-btn" onclick="openAvatarCreator(true)">Change Avatar</button>
+      <img 
+        src="${avatarImageUrl}" 
+        alt="Player avatar" 
+        class="avatar-card-image-full" 
+        loading="lazy"
+        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+      />
+      <div class="avatar-card-placeholder" style="display: none; align-items: center; justify-content: center; height: 100%;">
+        <p class="info-card-placeholder-text">avatar</p>
       </div>
     `;
   } else {
-    // No avatar - show placeholder with create button
+    // No avatar - show placeholder
     html = `
-      <div class="avatar-card-content">
+      <div class="avatar-card-placeholder" style="display: flex; align-items: center; justify-content: center; height: 100%;">
         <p class="info-card-placeholder-text">avatar</p>
-        <button class="avatar-card-create-btn" onclick="openAvatarCreator(false)">Create Avatar</button>
       </div>
     `;
   }
@@ -1967,6 +1978,11 @@ function handleAvatarCreatorMessage(event) {
           
           // Re-render avatar card
           renderAvatarCard();
+          
+          // Update profile screen if it's open
+          if (appState.currentScreen === 'profile') {
+            populateProfileForm();
+          }
           
           // Re-enable game buttons if they were disabled
           enableGameButtons();
