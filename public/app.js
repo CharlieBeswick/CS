@@ -2750,10 +2750,10 @@ function getRpmAvatarUrl(player, fullBody = false) {
     // Base URL for RPM Render API
     let url = `https://models.readyplayer.me/${player.rpmAvatarId}.png`;
     
-    // For full-body renders (lobby strip), add scene parameter
+    // For full-body renders (lobby strip), add camera parameter
     if (fullBody) {
-      // Use fullbody-posture-v1-transparent scene for full-body avatars
-      url += '?scene=fullbody-posture-v1-transparent';
+      // Use camera=fullbody to get full-body render (head to toe)
+      url += '?camera=fullbody';
     }
     
     return url;
