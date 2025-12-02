@@ -2739,15 +2739,24 @@ function updateBronzeTimer(el, targetIso, prefix = '') {
 
 /**
  * Get Ready Player Me avatar image URL for a player
- * Reuses the same logic as homepage avatar card
+ * @param {Object} player - Player object with rpmAvatarId/rpmAvatarUrl
+ * @param {boolean} fullBody - If true, request full-body render (for lobby strip)
+ * @returns {string|null} Avatar image URL or null
  */
-function getRpmAvatarUrl(player) {
+function getRpmAvatarUrl(player, fullBody = false) {
   // Always use rpmAvatarId to generate the .png image URL
   // rpmAvatarUrl is often a .glb 3D model file, not an image
   if (player.rpmAvatarId) {
-    // Use the same URL format as homepage: https://models.readyplayer.me/{avatarId}.png
-    // This gives a full-body render by default
-    return `https://models.readyplayer.me/${player.rpmAvatarId}.png`;
+    // Base URL for RPM Render API
+    let url = `https://models.readyplayer.me/${player.rpmAvatarId}.png`;
+    
+    // For full-body renders (lobby strip), add scene parameter
+    if (fullBody) {
+      // Use fullbody-posture-v1-transparent scene for full-body avatars
+      url += '?scene=fullbody-posture-v1-transparent';
+    }
+    
+    return url;
   }
   
   // Only use rpmAvatarUrl if it's explicitly an image (not .glb)
@@ -2820,7 +2829,8 @@ function renderLobbyAvatarStrip() {
   }
 
   container.innerHTML = displayPlayers.map(player => {
-    const avatarUrl = getRpmAvatarUrl(player);
+    // Request full-body render for lobby avatars
+    const avatarUrl = getRpmAvatarUrl(player, true);
     
     // Debug logging
     console.log('[Avatar Strip] Player:', {
