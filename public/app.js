@@ -2829,48 +2829,63 @@ function renderLobbyAvatarStrip() {
   }
 
   // Distribute players across 3 layers: 7 back, 7 middle, 6 front (up to 20 total)
+  // Fill back row first, then middle, then front (left to right in each row)
   const totalPlayers = displayPlayers.length;
   const backCount = Math.min(7, totalPlayers);
   const middleCount = Math.min(7, Math.max(0, totalPlayers - backCount));
   const frontCount = Math.max(0, totalPlayers - backCount - middleCount);
   
-  // Calculate positions for evenly spaced, staggered rows
+  // Calculate positions for evenly spaced, staggered rows with tighter spacing
   const containerWidth = container.offsetWidth || 480; // Fallback width
   const avatarWidth = 80; // Base avatar width
-  const padding = 20; // Padding from edges
+  const padding = 10; // Reduced padding from edges
+  const spacingBetweenAvatars = 15; // Tighter spacing between avatars (was calculated, now fixed)
   
-  // Calculate spacing for each row (evenly distribute across available width)
-  const availableWidth = containerWidth - (padding * 2) - avatarWidth;
+  // Calculate total width needed for each row
+  const calculateRowWidth = (count) => {
+    if (count === 0) return 0;
+    return (count * avatarWidth) + ((count - 1) * spacingBetweenAvatars);
+  };
+  
+  // Center each row within the container
+  const centerRow = (rowWidth) => {
+    return (containerWidth - rowWidth) / 2;
+  };
   
   container.innerHTML = displayPlayers.map((player, index) => {
-    // Determine which layer this avatar belongs to
+    // Determine which layer this avatar belongs to (fill back first, then middle, then front)
     let layer, layerIndex, rowCount;
     if (index < backCount) {
+      // Back row: first 7 players
       layer = 'back';
       layerIndex = index;
       rowCount = backCount;
     } else if (index < backCount + middleCount) {
+      // Middle row: next 7 players
       layer = 'middle';
       layerIndex = index - backCount;
       rowCount = middleCount;
     } else {
+      // Front row: remaining players (up to 6)
       layer = 'front';
       layerIndex = index - backCount - middleCount;
       rowCount = frontCount;
     }
     
-    // Calculate horizontal position - evenly spaced across width
+    // Calculate horizontal position - evenly spaced with tighter spacing
     // Stagger each row by offsetting the start position
+    const rowWidth = calculateRowWidth(rowCount);
+    const rowStartX = centerRow(rowWidth);
+    
     let staggerOffset = 0;
     if (layer === 'middle') {
-      staggerOffset = (availableWidth / (rowCount + 1)) * 0.5; // Stagger middle row
+      staggerOffset = spacingBetweenAvatars * 0.4; // Stagger middle row slightly
     } else if (layer === 'front') {
-      staggerOffset = (availableWidth / (rowCount + 1)) * 0.25; // Stagger front row less
+      staggerOffset = spacingBetweenAvatars * 0.2; // Stagger front row less
     }
     
-    // Evenly space avatars across available width
-    const spacing = rowCount > 1 ? availableWidth / (rowCount - 1) : 0;
-    const leftPosition = padding + staggerOffset + (layerIndex * spacing);
+    // Position from left to right within the row
+    const leftPosition = rowStartX + staggerOffset + (layerIndex * (avatarWidth + spacingBetweenAvatars));
     
     // Request full-body render for lobby avatars
     const avatarUrl = getRpmAvatarUrl(player, true);
