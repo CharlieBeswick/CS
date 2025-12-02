@@ -2828,39 +2828,49 @@ function renderLobbyAvatarStrip() {
     return;
   }
 
-  // Distribute players across 3 layers (back, middle, front)
-  // Back layer: ~33%, Middle: ~33%, Front: ~34%
+  // Distribute players across 3 layers: 7 back, 7 middle, 6 front (up to 20 total)
   const totalPlayers = displayPlayers.length;
-  const backCount = Math.ceil(totalPlayers * 0.33);
-  const middleCount = Math.ceil(totalPlayers * 0.33);
-  const frontCount = totalPlayers - backCount - middleCount;
+  const backCount = Math.min(7, totalPlayers);
+  const middleCount = Math.min(7, Math.max(0, totalPlayers - backCount));
+  const frontCount = Math.max(0, totalPlayers - backCount - middleCount);
   
-  // Calculate positions for overlapping crowd effect
+  // Calculate positions for evenly spaced, staggered rows
   const containerWidth = container.offsetWidth || 480; // Fallback width
   const avatarWidth = 80; // Base avatar width
-  const overlapOffset = 50; // How much avatars overlap (negative spacing)
-  const startOffset = 20; // Start position from left edge
+  const padding = 20; // Padding from edges
+  
+  // Calculate spacing for each row (evenly distribute across available width)
+  const availableWidth = containerWidth - (padding * 2) - avatarWidth;
   
   container.innerHTML = displayPlayers.map((player, index) => {
     // Determine which layer this avatar belongs to
-    let layer, layerIndex;
+    let layer, layerIndex, rowCount;
     if (index < backCount) {
       layer = 'back';
       layerIndex = index;
+      rowCount = backCount;
     } else if (index < backCount + middleCount) {
       layer = 'middle';
       layerIndex = index - backCount;
+      rowCount = middleCount;
     } else {
       layer = 'front';
       layerIndex = index - backCount - middleCount;
+      rowCount = frontCount;
     }
     
-    // Calculate horizontal position with overlap
-    // Each layer starts slightly offset and overlaps
-    const baseX = startOffset + (layerIndex * overlapOffset);
-    // Add slight random variation for more natural crowd look
-    const randomOffset = (Math.random() - 0.5) * 10; // ±5px variation
-    const leftPosition = baseX + randomOffset;
+    // Calculate horizontal position - evenly spaced across width
+    // Stagger each row by offsetting the start position
+    let staggerOffset = 0;
+    if (layer === 'middle') {
+      staggerOffset = (availableWidth / (rowCount + 1)) * 0.5; // Stagger middle row
+    } else if (layer === 'front') {
+      staggerOffset = (availableWidth / (rowCount + 1)) * 0.25; // Stagger front row less
+    }
+    
+    // Evenly space avatars across available width
+    const spacing = rowCount > 1 ? availableWidth / (rowCount - 1) : 0;
+    const leftPosition = padding + staggerOffset + (layerIndex * spacing);
     
     // Request full-body render for lobby avatars
     const avatarUrl = getRpmAvatarUrl(player, true);
