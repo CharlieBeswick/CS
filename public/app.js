@@ -2802,6 +2802,15 @@ function renderLobbyAvatarStrip() {
   container.innerHTML = displayPlayers.map(player => {
     const avatarUrl = getRpmAvatarUrl(player);
     
+    // Debug logging
+    console.log('[Avatar Strip] Player:', {
+      displayName: player.displayName,
+      userId: player.userId,
+      rpmAvatarId: player.rpmAvatarId,
+      rpmAvatarUrl: player.rpmAvatarUrl,
+      generatedUrl: avatarUrl,
+    });
+    
     if (avatarUrl) {
       return `
         <div class="bronze-avatar-strip-item" title="${escapeHtml(player.displayName)}">
