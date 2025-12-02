@@ -1214,20 +1214,19 @@ body {
 .bottom-nav {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
   width: 100%;
-  max-width: 480px;
   background: linear-gradient(180deg, rgba(26, 26, 46, 0.95) 0%, rgba(26, 26, 46, 1) 100%);
   backdrop-filter: blur(10px);
   border-top: 2px solid var(--accent-neon);
   display: flex;
-  justify-content: space-around;
-  padding: 0.75rem 0;
+  justify-content: space-evenly;
+  align-items: center;
+  padding: 0.5rem 0.25rem;
   box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
   z-index: 100;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
 }
 
 .nav-item {
@@ -1235,17 +1234,26 @@ body {
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.3rem;
   border-radius: var(--border-radius);
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-  font-size: 0.75rem;
-  min-width: 70px;
+  gap: 0.2rem;
+  font-size: 0.65rem;
   flex: 1;
+  min-width: 0;
   max-width: 100%;
+  text-align: center;
+}
+
+.nav-item span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  font-size: 0.65rem;
 }
 
 .nav-item:hover {
@@ -3741,24 +3749,6 @@ body {
   line-height: 1.2;
 }
 
-/* Responsive: Bottom nav on mobile */
-@media (max-width: 480px) {
-  .bottom-nav {
-    padding: 0.5rem 0;
-  }
-  
-  .nav-item {
-    padding: 0.4rem 0.5rem;
-    min-width: 0;
-    font-size: 0.7rem;
-    gap: 0.2rem;
-  }
-  
-  .nav-item span {
-    font-size: 0.65rem;
-  }
-}
-
 /* Responsive: On very narrow screens, allow horizontal scroll */
 @media (max-width: 360px) {
   .ticket-strip {
@@ -3781,15 +3771,6 @@ body {
   
   .ticket-label-below {
     font-size: 0.55rem;
-  }
-  
-  .nav-item {
-    padding: 0.3rem 0.4rem;
-    font-size: 0.65rem;
-  }
-  
-  .nav-item span {
-    font-size: 0.6rem;
   }
 }
 
