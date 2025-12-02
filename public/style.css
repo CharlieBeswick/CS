@@ -1817,13 +1817,20 @@ body {
 }
 
 .bronze-avatar-strip-avatar {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  z-index: 1;
 }
 
 .bronze-avatar-strip-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   display: flex;
@@ -1831,6 +1838,7 @@ body {
   justify-content: center;
   background: rgba(0, 255, 255, 0.1);
   border-radius: 8px;
+  z-index: 0;
 }
 
 .bronze-avatar-strip-initial {
