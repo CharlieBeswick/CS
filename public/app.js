@@ -2829,7 +2829,8 @@ function renderLobbyAvatarStrip() {
             alt="${escapeHtml(player.displayName)}"
             class="bronze-avatar-strip-avatar"
             loading="lazy"
-            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+            onerror="console.error('[Avatar Strip] Image failed to load:', '${avatarUrl}'); this.style.display='none'; const placeholder = this.nextElementSibling; if (placeholder) { placeholder.style.display='flex'; }"
+            onload="console.log('[Avatar Strip] Image loaded successfully:', '${avatarUrl}')"
           />
           <div class="bronze-avatar-strip-placeholder" style="display: none;">
             <span class="bronze-avatar-strip-initial">${escapeHtml((player.displayName || '?')[0].toUpperCase())}</span>
@@ -2839,6 +2840,7 @@ function renderLobbyAvatarStrip() {
     } else {
       // No avatar - show placeholder with initial
       const initial = (player.displayName || '?')[0].toUpperCase();
+      console.log('[Avatar Strip] No avatar URL for player, showing placeholder:', player.displayName);
       return `
         <div class="bronze-avatar-strip-item" title="${escapeHtml(player.displayName)}">
           <div class="bronze-avatar-strip-placeholder">
