@@ -552,6 +552,10 @@ router.get('/me', async (req, res) => {
             avatarUrl: user.avatarUrl || user.picture,
             credits: user.credits,
             role: user.role,
+            // Ready Player Me avatar fields
+            rpmAvatarId: user.rpmAvatarId || null,
+            rpmAvatarUrl: user.rpmAvatarUrl || null,
+            rpmUserId: user.rpmUserId || null,
           },
         });
       } else {
@@ -565,6 +569,62 @@ router.get('/me', async (req, res) => {
   }
   
   res.json({ ok: false });
+});
+
+/**
+ * POST /auth/me/avatar
+ * Saves or updates the current user's Ready Player Me avatar data
+ * Requires authentication (session or token)
+ */
+router.post('/me/avatar', async (req, res) => {
+  let userId = null;
+  
+  // Check for token header first (Safari fallback)
+  const { verifyToken } = require('../middleware/authMiddleware');
+  const token = req.headers['x-auth-token'];
+  
+  if (token) {
+    userId = await verifyToken(token);
+  }
+  
+  // Fall back to session cookie (normal flow)
+  if (!userId && req.session && req.session.userId) {
+    userId = req.session.userId;
+  }
+  
+  if (!userId) {
+    return res.status(401).json({ ok: false, error: 'Authentication required' });
+  }
+  
+  const { avatarId, url, rpmUserId } = req.body;
+  
+  // Validate required fields
+  if (!avatarId || typeof avatarId !== 'string' || avatarId.trim().length === 0) {
+    return res.status(400).json({ ok: false, error: 'avatarId is required' });
+  }
+  
+  try {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        rpmAvatarId: avatarId.trim(),
+        rpmAvatarUrl: url && url.trim() ? url.trim() : null,
+        rpmUserId: rpmUserId && rpmUserId.trim() ? rpmUserId.trim() : null,
+      },
+    });
+    
+    return res.json({
+      ok: true,
+      user: {
+        rpmAvatarId: user.rpmAvatarId,
+        rpmAvatarUrl: user.rpmAvatarUrl,
+        rpmUserId: user.rpmUserId,
+      },
+    });
+  } catch (error) {
+    console.error('[AUTH] /me/avatar: Error updating avatar:', error);
+    return res.status(500).json({ ok: false, error: 'Failed to save avatar' });
+  }
 });
 
 /**

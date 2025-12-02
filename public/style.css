@@ -3395,6 +3395,99 @@ body {
   padding: 20px 0;
 }
 
+/* Avatar Card Content */
+.avatar-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  padding: 8px;
+}
+
+.avatar-card-image {
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid rgba(0, 255, 0, 0.3);
+  box-shadow: 0 0 12px rgba(0, 255, 0, 0.2);
+}
+
+.avatar-card-create-btn,
+.avatar-card-edit-btn {
+  background: rgba(0, 255, 0, 0.1);
+  border: 1px solid rgba(0, 255, 0, 0.4);
+  color: rgba(0, 255, 0, 0.9);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.avatar-card-create-btn:hover,
+.avatar-card-edit-btn:hover {
+  background: rgba(0, 255, 0, 0.2);
+  border-color: rgba(0, 255, 0, 0.6);
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+.avatar-card-create-btn:active,
+.avatar-card-edit-btn:active {
+  transform: translateY(0);
+}
+
+/* Avatar Creator Modal */
+.avatar-creator-modal {
+  max-width: 900px;
+  width: 95%;
+  max-height: 90vh;
+}
+
+.avatar-creator-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#avatarCreatorError {
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  color: rgba(255, 100, 100, 0.9);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+/* Responsive: Make avatar card image smaller on mobile */
+@media (max-width: 400px) {
+  .avatar-card-image {
+    max-width: 140px;
+  }
+  
+  .avatar-creator-modal {
+    width: 98%;
+    max-height: 95vh;
+  }
+  
+  .avatar-creator-body {
+    padding: 12px;
+  }
+  
+  #avatarCreatorIframe {
+    height: 500px !important;
+  }
+}
+
 /* Info Card Content */
 .info-card-content {
   display: flex;

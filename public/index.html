@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Ready Player Me subdomain configuration -->
+  <!-- <meta name="rpm-subdomain" content="cryptosnow"> -->
+  <!-- Or set via script: <script>window.RPM_SUBDOMAIN = 'cryptosnow';</script> -->
   <title>Crypto Snow</title>
   <link rel="stylesheet" href="style.css">
   <!-- Google AdSense -->
@@ -614,6 +617,24 @@
             Start draw
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Avatar Creator Modal (Ready Player Me) -->
+  <div class="modal" id="avatarCreatorModal" style="display: none;">
+    <div class="modal-content avatar-creator-modal">
+      <div class="modal-header">
+        <h3 id="avatarCreatorTitle">Create Your Avatar</h3>
+        <button class="modal-close" id="avatarCreatorModalClose">&times;</button>
+      </div>
+      <div class="modal-body avatar-creator-body">
+        <div id="avatarCreatorError" class="error-message" style="display: none;"></div>
+        <iframe
+          id="avatarCreatorIframe"
+          allow="camera *; microphone *; clipboard-write"
+          style="width: 100%; height: 600px; border: none; border-radius: 8px;"
+        ></iframe>
       </div>
     </div>
   </div>

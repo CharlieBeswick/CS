@@ -18,6 +18,12 @@ model User {
   picture         String?
   publicName      String?
   avatarUrl       String?
+  // Ready Player Me avatar linkage
+  // TODO: Run migration: npx prisma migrate dev --name add_rpm_avatar_fields
+  // Then: npx prisma generate
+  rpmAvatarId     String? // avatarId from v2.avatar.exported
+  rpmAvatarUrl    String? // optional, URL from event (GLB or CDN URL)
+  rpmUserId       String? // optional RPM user id from v1.user.set / v1.user.authorized
   // Email/password authentication fields
   passwordHash     String?  // bcrypt hash for email/password users
   dateOfBirth      DateTime? // Date of birth for age verification

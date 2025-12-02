@@ -327,6 +327,43 @@ function setupEventListeners() {
     });
   }
 
+  // Avatar creator modal
+  const avatarCreatorModal = document.getElementById('avatarCreatorModal');
+  const avatarCreatorModalClose = document.getElementById('avatarCreatorModalClose');
+  
+  if (avatarCreatorModalClose) {
+    avatarCreatorModalClose.addEventListener('click', () => {
+      // Only allow closing if user has an avatar (not forcing creation)
+      if (!needsAvatar()) {
+        closeAvatarCreator();
+      } else {
+        // Show a message that avatar is required
+        const errorDiv = document.getElementById('avatarCreatorError');
+        if (errorDiv) {
+          errorDiv.textContent = 'Please create your avatar to continue playing CryptoSnow.';
+          errorDiv.style.display = 'block';
+          setTimeout(() => {
+            errorDiv.style.display = 'none';
+          }, 3000);
+        }
+      }
+    });
+  }
+  
+  if (avatarCreatorModal) {
+    avatarCreatorModal.addEventListener('click', (e) => {
+      // Only allow closing on background click if user has an avatar
+      if (e.target === avatarCreatorModal) {
+        if (!needsAvatar()) {
+          closeAvatarCreator();
+        } else {
+          // Prevent closing when avatar is required
+          e.stopPropagation();
+        }
+      }
+    });
+  }
+
   // Profile form submission
   const profileForm = document.getElementById('profile-form');
   if (profileForm) {
@@ -1592,8 +1629,20 @@ async function handleWatchAdLegacy() {
 async function loadLobbyContent() {
   // Render player info and game stats when lobby loads
   renderPlayerInfo();
+  renderAvatarCard(); // Render avatar card with RPM avatar or placeholder
   loadGameStats();
   if (!appState.currentUser) return;
+
+  // Check if avatar is required
+  if (needsAvatar()) {
+    // Disable game buttons
+    disableGameButtons();
+    // Force avatar creation by opening modal
+    openAvatarCreator(false);
+  } else {
+    // Enable game buttons
+    enableGameButtons();
+  }
 
   // Load wallet summary
   await loadWalletSummary();
@@ -1692,6 +1741,337 @@ function renderPlayerInfo() {
   html += `<p class="info-card-player-detail">Level <strong>1</strong></p>`;
   
   playerInfoContent.innerHTML = html;
+}
+
+/**
+ * Render avatar card with Ready Player Me avatar or placeholder
+ */
+function renderAvatarCard() {
+  const avatarCard = document.querySelector('.info-card-avatar .info-card-content');
+  if (!avatarCard || !appState.currentUser) return;
+  
+  const user = appState.currentUser;
+  const rpmAvatarId = user.rpmAvatarId;
+  
+  let html = '';
+  
+  if (rpmAvatarId) {
+    // User has an avatar - show the avatar image
+    // Use RPM Render API for profile picture: https://models.readyplayer.me/{avatarId}.png
+    const avatarImageUrl = `https://models.readyplayer.me/${rpmAvatarId}.png`;
+    html = `
+      <div class="avatar-card-content">
+        <img 
+          src="${avatarImageUrl}" 
+          alt="Player avatar" 
+          class="avatar-card-image" 
+          loading="lazy"
+          onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+        />
+        <div class="avatar-card-placeholder" style="display: none;">
+          <p class="info-card-placeholder-text">avatar</p>
+        </div>
+        <button class="avatar-card-edit-btn" onclick="openAvatarCreator(true)">Change Avatar</button>
+      </div>
+    `;
+  } else {
+    // No avatar - show placeholder with create button
+    html = `
+      <div class="avatar-card-content">
+        <p class="info-card-placeholder-text">avatar</p>
+        <button class="avatar-card-create-btn" onclick="openAvatarCreator(false)">Create Avatar</button>
+      </div>
+    `;
+  }
+  
+  avatarCard.innerHTML = html;
+}
+
+/**
+ * Ready Player Me configuration
+ * Subdomain should be set via window.RPM_SUBDOMAIN (set via script tag or meta tag)
+ * or default to 'demo' for development
+ * 
+ * To configure: Add <script>window.RPM_SUBDOMAIN = 'cryptosnow';</script> before app.js
+ * Or set via meta tag: <meta name="rpm-subdomain" content="cryptosnow">
+ */
+let RPM_SUBDOMAIN = 'demo'; // Default fallback
+
+// Try to get from window variable (set via script tag)
+if (window.RPM_SUBDOMAIN) {
+  RPM_SUBDOMAIN = window.RPM_SUBDOMAIN;
+} else {
+  // Try to get from meta tag
+  const metaTag = document.querySelector('meta[name="rpm-subdomain"]');
+  if (metaTag && metaTag.content) {
+    RPM_SUBDOMAIN = metaTag.content;
+  }
+}
+
+/**
+ * Avatar Creator Modal state
+ */
+let avatarCreatorModalState = {
+  isOpen: false,
+  existingAvatarId: null,
+  messageListener: null,
+};
+
+/**
+ * Open the Ready Player Me avatar creator modal
+ * @param {boolean} isEdit - If true, opens in edit mode with existing avatar
+ */
+function openAvatarCreator(isEdit = false) {
+  const modal = document.getElementById('avatarCreatorModal');
+  const iframe = document.getElementById('avatarCreatorIframe');
+  const title = document.getElementById('avatarCreatorTitle');
+  const errorDiv = document.getElementById('avatarCreatorError');
+  
+  if (!modal || !iframe) {
+    console.error('Avatar creator modal elements not found');
+    return;
+  }
+  
+  // Hide error
+  if (errorDiv) {
+    errorDiv.style.display = 'none';
+  }
+  
+  // Set title
+  if (title) {
+    title.textContent = isEdit ? 'Edit Your Avatar' : 'Create Your Avatar';
+  }
+  
+  // Get existing avatar ID if editing
+  const existingAvatarId = isEdit && appState.currentUser?.rpmAvatarId 
+    ? appState.currentUser.rpmAvatarId 
+    : null;
+  
+  avatarCreatorModalState.existingAvatarId = existingAvatarId;
+  
+  // Hide close button if avatar is required (forcing creation)
+  const closeBtn = document.getElementById('avatarCreatorModalClose');
+  if (closeBtn) {
+    if (needsAvatar()) {
+      closeBtn.style.display = 'none';
+    } else {
+      closeBtn.style.display = 'block';
+    }
+  }
+  
+  // Build iframe URL
+  let frameUrl = `https://${RPM_SUBDOMAIN}.readyplayer.me/avatar?frameApi`;
+  if (existingAvatarId) {
+    frameUrl += `&id=${encodeURIComponent(existingAvatarId)}`;
+  }
+  
+  iframe.src = frameUrl;
+  
+  // Show modal
+  modal.style.display = 'flex';
+  avatarCreatorModalState.isOpen = true;
+  
+  // Set up message listener if not already set
+  if (!avatarCreatorModalState.messageListener) {
+    avatarCreatorModalState.messageListener = handleAvatarCreatorMessage;
+    window.addEventListener('message', avatarCreatorModalState.messageListener);
+  }
+}
+
+/**
+ * Close the avatar creator modal
+ */
+function closeAvatarCreator() {
+  const modal = document.getElementById('avatarCreatorModal');
+  const iframe = document.getElementById('avatarCreatorIframe');
+  const closeBtn = document.getElementById('avatarCreatorModalClose');
+  
+  if (modal) {
+    modal.style.display = 'none';
+  }
+  
+  if (iframe) {
+    iframe.src = ''; // Clear iframe to stop loading
+  }
+  
+  // Restore close button visibility
+  if (closeBtn) {
+    closeBtn.style.display = 'block';
+  }
+  
+  avatarCreatorModalState.isOpen = false;
+  avatarCreatorModalState.existingAvatarId = null;
+  
+  // Clean up message listener
+  if (avatarCreatorModalState.messageListener) {
+    window.removeEventListener('message', avatarCreatorModalState.messageListener);
+    avatarCreatorModalState.messageListener = null;
+  }
+}
+
+/**
+ * Handle messages from Ready Player Me iframe
+ */
+function handleAvatarCreatorMessage(event) {
+  // Security: Only accept messages from Ready Player Me domains
+  const allowedOrigins = [
+    'https://readyplayer.me',
+    `https://${RPM_SUBDOMAIN}.readyplayer.me`,
+  ];
+  
+  if (!allowedOrigins.some(origin => event.origin.startsWith(origin))) {
+    return;
+  }
+  
+  let json;
+  try {
+    json = JSON.parse(event.data);
+  } catch {
+    return;
+  }
+  
+  if (json?.source !== 'readyplayerme') return;
+  
+  // Handle frame ready event - subscribe to avatar events
+  if (json.eventName === 'v1.frame.ready') {
+    const iframe = document.getElementById('avatarCreatorIframe');
+    if (iframe?.contentWindow) {
+      iframe.contentWindow.postMessage(
+        JSON.stringify({
+          target: 'readyplayerme',
+          type: 'subscribe',
+          eventName: 'v1.**',
+        }),
+        '*'
+      );
+    }
+  }
+  
+  // Handle avatar exported event (prefer v2 for better metadata)
+  if (json.eventName === 'v2.avatar.exported' || json.eventName === 'v1.avatar.exported') {
+    const { avatarId, url, userId } = json.data || {};
+    
+    if (avatarId) {
+      saveAvatarToBackend({
+        avatarId,
+        url: url || null,
+        rpmUserId: userId || null,
+      })
+        .then(() => {
+          // Update user state
+          if (appState.currentUser) {
+            appState.currentUser.rpmAvatarId = avatarId;
+            appState.currentUser.rpmAvatarUrl = url || null;
+            appState.currentUser.rpmUserId = userId || null;
+          }
+          
+          // Re-render avatar card
+          renderAvatarCard();
+          
+          // Re-enable game buttons if they were disabled
+          enableGameButtons();
+          
+          // Close modal
+          closeAvatarCreator();
+          
+          // Check if we need to show a success message
+          console.log('Avatar saved successfully');
+        })
+        .catch((error) => {
+          console.error('Failed to save avatar:', error);
+          showAvatarCreatorError('Failed to save avatar. Please try again.');
+        });
+    }
+  }
+  
+  // Optionally log user events for debugging
+  if (json.eventName === 'v1.user.set' || json.eventName === 'v1.user.authorized') {
+    console.log('[RPM] User event:', json.eventName, json.data);
+  }
+}
+
+/**
+ * Save avatar data to backend
+ */
+async function saveAvatarToBackend(payload) {
+  const headers = getAuthHeaders();
+  headers['Content-Type'] = 'application/json';
+  
+  const res = await fetch(`${API_BASE}/auth/me/avatar`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: headers,
+    body: JSON.stringify(payload),
+  });
+  
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to save avatar');
+  }
+  
+  return res.json();
+}
+
+/**
+ * Show error message in avatar creator modal
+ */
+function showAvatarCreatorError(message) {
+  const errorDiv = document.getElementById('avatarCreatorError');
+  if (errorDiv) {
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+  }
+}
+
+/**
+ * Check if user needs to create an avatar
+ */
+function needsAvatar() {
+  return !appState.currentUser?.rpmAvatarId;
+}
+
+/**
+ * Disable game buttons when avatar is required
+ */
+function disableGameButtons() {
+  const tierGameButtons = document.querySelectorAll('.tier-game-btn');
+  const getBronzeBtn = document.getElementById('getBronzeBtn');
+  
+  tierGameButtons.forEach(btn => {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+    btn.title = 'Create your avatar to start playing CryptoSnow.';
+  });
+  
+  if (getBronzeBtn) {
+    getBronzeBtn.disabled = true;
+    getBronzeBtn.style.opacity = '0.5';
+    getBronzeBtn.style.cursor = 'not-allowed';
+    getBronzeBtn.title = 'Create your avatar to start playing CryptoSnow.';
+  }
+}
+
+/**
+ * Enable game buttons
+ */
+function enableGameButtons() {
+  const tierGameButtons = document.querySelectorAll('.tier-game-btn');
+  const getBronzeBtn = document.getElementById('getBronzeBtn');
+  
+  tierGameButtons.forEach(btn => {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+    btn.title = '';
+  });
+  
+  if (getBronzeBtn) {
+    getBronzeBtn.disabled = false;
+    getBronzeBtn.style.opacity = '1';
+    getBronzeBtn.style.cursor = 'pointer';
+    getBronzeBtn.title = '';
+  }
 }
 
 /**
